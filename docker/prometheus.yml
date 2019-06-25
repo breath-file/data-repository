@@ -25,6 +25,6 @@ scrape_configs:
       - targets: ['localhost:9090']
 
   - job_name: 'weather'
-    metrics_path: '/index.php'
+#    metrics_path: '/weather.php'
     static_configs:
       - targets: ['web:80']

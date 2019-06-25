@@ -5,3 +5,9 @@ default:
 
 build:
 	@docker build -t weather-exporter .
+
+weather:
+	@docker-compose run fpm php public/index.php OpenWeatherMap
+
+pollution:
+	@docker-compose run fpm php public/index.php Breezometer
