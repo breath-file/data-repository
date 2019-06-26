@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace App\DataSource;
 
+use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
 use App\Domain\Entity\MetricCollection;
@@ -19,7 +20,7 @@ use Exception;
  * Class OpenWeatherMap
  * @package App\DataSource
  */
-class OpenWeatherMap implements DataSourceInterface
+class OpenWeatherMap extends DataSourceAbstract implements DataSourceInterface
 {
     protected $config = [
         'metrics' => [
@@ -29,13 +30,20 @@ class OpenWeatherMap implements DataSourceInterface
         ]
     ];
 
+    protected $prefix = 'openweathermap';
+
+    /**
+     * @var JsonRestGatewayClient
+     */
+    protected $client;
+
     /**
      * WeatherExport constructor.
-     * @param array $config
+     * @param JsonRestGatewayClient $client
      */
-    public function __construct(array $config = [])
+    public function __construct(JsonRestGatewayClient $client)
     {
-        $this->config = array_replace_recursive($this->config, $config);
+        $this->client = $client;
     }
 
     /**
@@ -46,17 +54,26 @@ class OpenWeatherMap implements DataSourceInterface
     public function getMetrics(LocationEntity $location): MetricCollection
     {
         $metrics = new MetricCollection();
-        $route = sprintf(
-            'https://api.jeckel-lab.fr/weather?lat=%s&lon=%s&api-key=%s&units=metric',
-            $location->getLatitude(),
-            $location->getLongitude(),
-            getenv('API_KEY')
-        );
-        $data = json_decode(file_get_contents($route), false);
+
+        $data = $this->client->sendGet(
+            '/openweathermap/weather',
+            [
+                'lat' => $location->getLatitude(),
+                'lon' => $location->getLongitude(),
+                'units' => 'metric'
+            ]);
+
+//        $route = sprintf(
+//            'https://api.jeckel-lab.fr/weather?lat=%s&lon=%s&api-key=%s&units=metric',
+//            $location->getLatitude(),
+//            $location->getLongitude(),
+//            getenv('API_KEY')
+//        );
+//        $data = json_decode(file_get_contents($route), false);
 
         foreach ($this->config['metrics'] as $metric=>$metricConfig) {
             $metric = (new MeasureEntity())
-                ->setName($metric)
+                ->setName($this->generateMeasureName('weather', $metric))
                 ->setLocation($location)
                 ->setDatetimeUtc((new DateTimeImmutable())->setTimestamp($data->dt)->setTimezone(new DateTimeZone('UTC')))
                 //->setValue((float) sprintf($metricConfig['format'], $data->main->$metric));
@@ -66,4 +83,13 @@ class OpenWeatherMap implements DataSourceInterface
         }
         return $metrics;
     }
+
+    /**
+     * @return string
+     */
+    protected function getMeasurePrefix(): string
+    {
+        return $this->prefix;
+    }
+
 }

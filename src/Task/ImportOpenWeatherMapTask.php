@@ -22,7 +22,7 @@ class ImportOpenWeatherMapTask extends TaskAbstract
      */
     public function command(array $args): string
     {
-        $result = $this->dispatchCommand(new LoadMetricsCommand(new OpenWeatherMap()));
+        $result = $this->dispatchCommand(new LoadMetricsCommand($this->container->get(OpenWeatherMap::class)));
         return $result->isSuccess() ? 'Success' : 'Error';
     }
 }

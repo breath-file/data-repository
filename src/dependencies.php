@@ -5,6 +5,9 @@
  * Time: 18:06
  */
 // DIC configuration
+use App\Core\JsonRestGatewayClient;
+use App\DataSource\Breezometer;
+use App\DataSource\OpenWeatherMap;
 use App\Domain\Repository\LocationRepositoryInterface;
 use App\Domain\Repository\MeasureRepositoryInterface;
 use App\Formatter\PrometheusFormatter;
@@ -54,6 +57,17 @@ $container[MeasureRepositoryInterface::class] = static function(ContainerInterfa
 
 $container[PrometheusFormatter::class] = static function(ContainerInterface $c) {
     return new PrometheusFormatter('omeglast_weather_');
+};
+
+$container[JsonRestGatewayClient::class] = static function(ContainerInterface $c) {
+    $settings = $c->get('settings')['api_gateway'];
+    return new JsonRestGatewayClient($settings['host'], $settings['api_key']);
+};
+$container[Breezometer::class] = static function(ContainerInterface $c) {
+    return new Breezometer($c->get(JsonRestGatewayClient::class));
+};
+$container[OpenWeatherMap::class] = static function(ContainerInterface $c) {
+    return new OpenWeatherMap($c->get(JsonRestGatewayClient::class));
 };
 
 require_once 'commands.php';

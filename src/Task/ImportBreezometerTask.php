@@ -22,7 +22,7 @@ class ImportBreezometerTask extends TaskAbstract
      */
     public function command(array $args): string
     {
-        $result = $this->dispatchCommand(new LoadMetricsCommand(new Breezometer()));
+        $result = $this->dispatchCommand(new LoadMetricsCommand($this->container->get(Breezometer::class)));
         return $result->isSuccess() ? 'Success' : 'Error';
     }
 }

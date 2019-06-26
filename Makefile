@@ -9,5 +9,5 @@ build:
 weather:
 	@docker-compose run fpm php public/index.php OpenWeatherMap
 
-pollution:
+breezometer:
 	@docker-compose run fpm php public/index.php Breezometer

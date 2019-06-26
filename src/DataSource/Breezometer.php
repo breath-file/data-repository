@@ -7,48 +7,214 @@ declare(strict_types=1);
 
 namespace App\DataSource;
 
+use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
 use App\Domain\Entity\MetricCollection;
 use App\Domain\Repository\DataSourceInterface;
 use DateTimeImmutable;
 use DateTimeZone;
+use Exception;
 
 /**
  * Class Breezometer
  * @package App\DataSource
  */
-class Breezometer implements DataSourceInterface
+class Breezometer extends DataSourceAbstract implements DataSourceInterface
 {
+    /**
+     * @var JsonRestGatewayClient
+     */
+    protected $client;
+
+    /**
+     * @var string
+     */
+    protected $prefix = 'breezometer';
+
+    /**
+     * Breezometer constructor.
+     * @param JsonRestGatewayClient $client
+     */
+    public function __construct(JsonRestGatewayClient $client)
+    {
+        $this->client = $client;
+    }
+
+    /**
+     * @param LocationEntity $location
+     * @return MetricCollection
+     * @throws Exception
+     */
     public function getMetrics(LocationEntity $location): MetricCollection
     {
-        $metrics = new MetricCollection();
-        $route = sprintf(
-            'https://api.jeckel-lab.fr/breezometer/airquality?api-key=%s&lat=%s&lon=%s&features=breezometer_aqi,pollutants_concentrations',
-            getenv('API_KEY'),
-            $location->getLatitude(),
-            $location->getLongitude()
-        );
+        return $this->loadPollen($location)
+            ->merge($this->loadPollution($location))
+            ->merge($this->loadWeather($location));
+    }
 
-        var_dump($route);
+    /**
+     * @param LocationEntity $location
+     * @return MetricCollection
+     * @throws Exception
+     */
+    public function loadPollen(LocationEntity $location): MetricCollection
+    {
+        $measures = new MetricCollection();
 
-        $data = json_decode(file_get_contents($route), false);
+        if ($location->getCountry() !== 'FR') {
+            return $measures;
+        }
+
+        $data = $this->client->sendGet(
+            '/breezometer/pollen',
+            [
+                'lat' => $location->getLatitude(),
+                'lon' => $location->getLongitude(),
+                'features' => 'types_information,plants_information'
+            ]);
+
+        foreach ($data->data->types as $type=>$values) {
+
+            if (! $values->data_available) {
+                continue;
+            }
+            $measures[] = (new MeasureEntity())
+                ->setName(sprintf('%s_pollen_type_%s', $this->prefix, $type))
+                ->setLocation($location)
+                ->setValue($values->index->value)
+                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+
+
+        }
+
+        foreach ($data->data->plants as $plant=>$values) {
+
+            if (! $values->data_available) {
+                continue;
+            }
+
+            $measures[] = (new MeasureEntity())
+                ->setName(sprintf('%s_pollen_plant_%s', $this->prefix, $plant))
+                ->setLocation($location)
+                ->setValue($values->index->value)
+                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        }
+
+        return $measures;
+    }
+
+    /**
+     * @param LocationEntity $location
+     * @return MetricCollection
+     * @throws Exception
+     */
+    public function loadPollution(LocationEntity $location): MetricCollection
+    {
+        $measures = new MetricCollection();
+        $data = $this->client->sendGet(
+            '/breezometer/airquality',
+            [
+                'lat' => $location->getLatitude(),
+                'lon' => $location->getLongitude(),
+                'features' => 'breezometer_aqi,pollutants_concentrations,pollutants_aqi_information,local_aqi'
+            ]);
 
         foreach ($data->data->pollutants as $key=>$pollutant) {
-            $metric = (new MeasureEntity())
-                ->setName(sprintf('%s_%s', $key, $pollutant->concentration->units))
+            $measures[] = (new MeasureEntity())
+                ->setName(sprintf('%s_pollution_%s_%s', $this->prefix, $key, $pollutant->concentration->units))
                 ->setLocation($location)
                 ->setValue($pollutant->concentration->value)
                 ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
-            $metrics[] = $metric;
+            $measures[] = (new MeasureEntity())
+                ->setName(sprintf('%s_pollution_%s_aqi', $this->prefix, $key))
+                ->setLocation($location)
+                ->setValue($pollutant->aqi_information->baqi->aqi)
+                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
         }
 
-        $metrics[] = (new MeasureEntity())
+        $measures[] = (new MeasureEntity())
             ->setLocation($location)
-            ->setName('aqi')
+            ->setName(sprintf('%s_pollution_aqi', $this->prefix))
             ->setValue($data->data->indexes->baqi->aqi)
             ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
-        return $metrics;
+
+        if (property_exists($data->data->indexes, 'fra_atmo')) {
+            $measures[] = (new MeasureEntity())
+                ->setLocation($location)
+                ->setName(sprintf('%s_pollution_fra_atmo', $this->prefix))
+                ->setValue($data->data->indexes->fra_atmo->aqi)
+                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        }
+        if (property_exists($data->data->indexes, 'usa_epa')) {
+            $measures[] = (new MeasureEntity())
+                ->setLocation($location)
+                ->setName(sprintf('%s_pollution_usa_epa', $this->prefix))
+                ->setValue($data->data->indexes->usa_epa->aqi)
+                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        }
+
+        return $measures;
     }
 
+    /**
+     * @param LocationEntity $location
+     * @return MetricCollection
+     * @throws Exception
+     */
+    public function loadWeather(LocationEntity $location): MetricCollection
+    {
+        $measures = new MetricCollection();
+        $data = $this->client->sendGet(
+            '/breezometer/weather',
+            [
+                'lat' => $location->getLatitude(),
+                'lon' => $location->getLongitude()
+            ]);
+
+        // Temperature
+        $measures[] = (new MeasureEntity())
+            ->setLocation($location)
+            ->setName($this->generateMeasureName('weather', 'temp'))
+            ->setValue($data->data->temperature->value)
+            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+
+        // Humidity
+        $measures[] = (new MeasureEntity())
+            ->setLocation($location)
+            ->setName($this->generateMeasureName('weather', 'humidity'))
+            ->setValue($data->data->relative_humidity)
+            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+
+        // Pressure
+        $measures[] = (new MeasureEntity())
+            ->setLocation($location)
+            ->setName($this->generateMeasureName('weather', 'pressure'))
+            ->setValue($data->data->pressure->value)
+            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+
+        // Precipitation Probability
+        $measures[] = (new MeasureEntity())
+            ->setLocation($location)
+            ->setName($this->generateMeasureName('weather', 'precipitation_probability'))
+            ->setValue($data->data->precipitation->precipitation_probability)
+            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+
+        // Total precipitation
+        $measures[] = (new MeasureEntity())
+            ->setLocation($location)
+            ->setName($this->generateMeasureName('weather', 'precipitation', 'mm', 'total'))
+            ->setValue($data->data->precipitation->total_precipitation->value)
+            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+
+        return $measures;
+    }
+
+    /**
+     * @return string
+     */
+    protected function getMeasurePrefix(): string
+    {
+        return $this->prefix;
+    }
 }
