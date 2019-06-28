@@ -10,7 +10,7 @@ namespace App\DataSource;
 use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
-use App\Domain\Entity\MetricCollection;
+use App\Domain\Entity\MeasureCollection;
 use App\Domain\Repository\DataSourceInterface;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -48,12 +48,12 @@ class OpenWeatherMap extends DataSourceAbstract implements DataSourceInterface
 
     /**
      * @param LocationEntity $location
-     * @return MetricCollection
+     * @return MeasureCollection
      * @throws Exception
      */
-    public function getMetrics(LocationEntity $location): MetricCollection
+    public function getMetrics(LocationEntity $location): MeasureCollection
     {
-        $metrics = new MetricCollection();
+        $metrics = new MeasureCollection();
 
         $data = $this->client->sendGet(
             '/openweathermap/weather',

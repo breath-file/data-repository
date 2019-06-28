@@ -11,7 +11,6 @@ use App\Domain\Command\CommandInterface;
 use App\Domain\Command\LoadMetricsCommand;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
-use App\Domain\Entity\MetricCollection;
 use App\Domain\Repository\LocationRepositoryInterface;
 use App\Domain\Repository\MeasureRepositoryInterface;
 use Exception;
@@ -58,16 +57,13 @@ class LoadMetricsCommandHandler implements CommandHandlerInterface
     public function handle(CommandInterface $command): CommandResult
     {
         $locations = $this->locationRepository->list();
-        //$metrics = new MetricCollection();
         /** @var LocationEntity $location */
         foreach ($locations as $location) {
             /** @var MeasureEntity $measure */
             foreach ($command->getDataSource()->getMetrics($location) as $measure) {
                 $this->measureRepository->save($measure);
             }
-//            $metrics->merge($command->getDataSource()->getMetrics($location));
         }
-//        return new CommandResult(true, $metrics);
         return new CommandResult(true);
     }
 }

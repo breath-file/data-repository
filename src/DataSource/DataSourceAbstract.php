@@ -7,11 +7,13 @@ declare(strict_types=1);
 
 namespace App\DataSource;
 
+use App\Domain\Repository\DataSourceInterface;
+
 /**
  * Class DataSourceAbstract
  * @package App\DataSource
  */
-abstract class DataSourceAbstract
+abstract class DataSourceAbstract implements DataSourceInterface
 {
     /**
      * @return string

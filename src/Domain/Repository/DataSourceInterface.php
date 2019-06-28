@@ -8,7 +8,8 @@ declare(strict_types=1);
 namespace App\Domain\Repository;
 
 use App\Domain\Entity\LocationEntity;
-use App\Domain\Entity\MetricCollection;
+use App\Domain\Entity\MeasureCollection;
+use DateInterval;
 use Exception;
 
 /**
@@ -19,8 +20,8 @@ interface DataSourceInterface
 {
     /**
      * @param LocationEntity $location
-     * @return MetricCollection
+     * @return MeasureCollection
      * @throws Exception
      */
-    public function getMetrics(LocationEntity $location): MetricCollection;
+    public function getMetrics(LocationEntity $location): MeasureCollection;
 }

@@ -11,10 +11,10 @@ use ArrayObject;
 use InvalidArgumentException;
 
 /**
- * Class MetricCollection
+ * Class MeasureCollection
  * @package App\Entity
  */
-class MetricCollection extends ArrayObject
+class MeasureCollection extends ArrayObject
 {
     /**
      * Implementation of method declared in \ArrayAccess
@@ -31,10 +31,10 @@ class MetricCollection extends ArrayObject
     }
 
     /**
-     * @param MetricCollection $collection
-     * @return MetricCollection
+     * @param MeasureCollection $collection
+     * @return MeasureCollection
      */
-    public function merge(MetricCollection $collection): MetricCollection
+    public function merge(MeasureCollection $collection): MeasureCollection
     {
         /** @var MeasureEntity $metric */
         foreach ($collection as $metric) {

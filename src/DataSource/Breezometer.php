@@ -10,7 +10,7 @@ namespace App\DataSource;
 use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
-use App\Domain\Entity\MetricCollection;
+use App\Domain\Entity\MeasureCollection;
 use App\Domain\Repository\DataSourceInterface;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -43,10 +43,10 @@ class Breezometer extends DataSourceAbstract implements DataSourceInterface
 
     /**
      * @param LocationEntity $location
-     * @return MetricCollection
+     * @return MeasureCollection
      * @throws Exception
      */
-    public function getMetrics(LocationEntity $location): MetricCollection
+    public function getMetrics(LocationEntity $location): MeasureCollection
     {
         return $this->loadPollen($location)
             ->merge($this->loadPollution($location))
@@ -55,12 +55,12 @@ class Breezometer extends DataSourceAbstract implements DataSourceInterface
 
     /**
      * @param LocationEntity $location
-     * @return MetricCollection
+     * @return MeasureCollection
      * @throws Exception
      */
-    public function loadPollen(LocationEntity $location): MetricCollection
+    public function loadPollen(LocationEntity $location): MeasureCollection
     {
-        $measures = new MetricCollection();
+        $measures = new MeasureCollection();
 
         if ($location->getCountry() !== 'FR') {
             return $measures;
@@ -106,12 +106,12 @@ class Breezometer extends DataSourceAbstract implements DataSourceInterface
 
     /**
      * @param LocationEntity $location
-     * @return MetricCollection
+     * @return MeasureCollection
      * @throws Exception
      */
-    public function loadPollution(LocationEntity $location): MetricCollection
+    public function loadPollution(LocationEntity $location): MeasureCollection
     {
-        $measures = new MetricCollection();
+        $measures = new MeasureCollection();
         $data = $this->client->sendGet(
             '/breezometer/airquality',
             [
@@ -159,12 +159,12 @@ class Breezometer extends DataSourceAbstract implements DataSourceInterface
 
     /**
      * @param LocationEntity $location
-     * @return MetricCollection
+     * @return MeasureCollection
      * @throws Exception
      */
-    public function loadWeather(LocationEntity $location): MetricCollection
+    public function loadWeather(LocationEntity $location): MeasureCollection
     {
-        $measures = new MetricCollection();
+        $measures = new MeasureCollection();
         $data = $this->client->sendGet(
             '/breezometer/weather',
             [

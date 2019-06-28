@@ -22,15 +22,15 @@ $container = $app->getContainer();
 //    $settings = $c->get('settings')['renderer'];
 //    return new Slim\Views\PhpRenderer($settings['template_path']);
 //};
-// monolog
-//$container['logger'] = function ($c) {
-//    $settings = $c->get('settings')['logger'];
-//    $logger = new Monolog\Logger($settings['name']);
-//    $logger->pushProcessor(new Monolog\Processor\UidProcessor());
-//    $logger->pushHandler(new Monolog\Handler\StreamHandler($settings['path'], $settings['level']));
-//    return $logger;
-//};
 
+// monolog
+$container['logger'] = static function (ContainerInterface $c) {
+    $settings = $c->get('settings')['logger'];
+    $logger = new Monolog\Logger($settings['name']);
+    $logger->pushProcessor(new Monolog\Processor\UidProcessor());
+    $logger->pushHandler(new Monolog\Handler\StreamHandler($settings['path'], $settings['level']));
+    return $logger;
+};
 
 $capsule = new Manager;
 $capsule->addConnection($container['settings']['db']);
@@ -41,12 +41,6 @@ $capsule->bootEloquent();
 $container['db'] = function($c) use ($capsule){
     return $capsule;
 };
-
-//$container[\RB\Domain\Adapter\IngredientRepositoryInterface::class] = function (\Psr\Container\ContainerInterface $c) {
-//    $repository = new \RB\Repository\IngredientRepository();
-//    $repository->setLogger($c->get('logger'));
-//    return $repository;
-//};
 
 $container[LocationRepositoryInterface::class] = static function(ContainerInterface $c) {
     return new LocationRepository();

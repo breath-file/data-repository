@@ -14,7 +14,6 @@ services:
       - "81:80"
 
   fpm:
-#    image: php:7-fpm-alpine
     build:
       context: .
       dockerfile: docker/fpm/Dockerfile
@@ -24,24 +23,24 @@ services:
     env_file:
       - .env
     environment:
-      MYSQL_USER: user
-      MYSQL_PASSWORD: passwd
-      MYSQL_DATABASE: weather
-      MYSQL_HOST: mysql
+      DB_DRIVER: pgsql
+      DB_USER: user
+      DB_PASSWORD: passwd
+      DB_DATABASE: weather
+      DB_HOST: postgres
     depends_on:
-      - mysql
+      - postgres
 
-  mysql:
-    image: mysql:5.7
+  postgres:
+    image: postgres
     environment:
-      MYSQL_USER: user
-      MYSQL_PASSWORD: passwd
-      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
-      MYSQL_DATABASE: weather
+      POSTGRES_DB: weather
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: passwd
     volumes:
-      - ./docker/mysql:/docker-entrypoint-initdb.d
+      - ./docker/postgres:/docker-entrypoint-initdb.d
     ports:
-      - "3306:3306"
+      - "5432:5432"
 
   prometheus:
     image: prom/prometheus

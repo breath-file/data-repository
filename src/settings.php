@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 use App\Task\ImportBreezometerTask;
 use App\Task\ImportOpenWeatherMapTask;
+use App\Task\TaskRunner;
+use Monolog\Logger;
 
 return [
     'settings' => [
@@ -17,21 +19,21 @@ return [
 //            'template_path' => __DIR__ . '/../templates/',
 //        ],
         // Monolog settings
-/*        'logger' => [
-            'name' => 'RecipeBudget-API',
-            'path' => getenv('DOCKER') ? 'php://stdout' : __DIR__ . '/../logs/app.log',
-            'level' => \Monolog\Logger::DEBUG,
-        ],*/
+        'logger' => [
+            'name' => 'Omeglast',
+            'path' => 'php://stdout',
+            'level' => Logger::DEBUG,
+        ],
         'db' => [
-            'driver' => 'mysql',
-            'host' => getenv('MYSQL_HOST'),
-            'database' => getenv('MYSQL_DATABASE'),
-            'username' => getenv('MYSQL_USER'),
-            'password' => getenv('MYSQL_PASSWORD'),
+            'driver' => getenv('DB_DRIVER'),
+            'host' => getenv('DB_HOST'),
+            'database' => getenv('DB_DATABASE'),
+            'username' => getenv('DB_USER'),
+            'password' => getenv('DB_PASSWORD'),
             'charset' => 'utf8',
             'collation' => 'utf8_unicode_ci',
         ],
-            'api_gateway' => [
+        'api_gateway' => [
             'host' => getenv('GATEWAY_HOST') ?: 'https://api.jeckel-lab.fr',
             'api_key' => getenv('GATEWAY_API_KEY') ?: die('GATEWAY_API_KEY is not defined')
         ],
@@ -46,6 +48,7 @@ return [
     ],
     'commands' => [
         'OpenWeatherMap' => ImportOpenWeatherMapTask::class,
-        'Breezometer'    => ImportBreezometerTask::class
+        'Breezometer'    => ImportBreezometerTask::class,
+        'TaskRunner'     => TaskRunner::class
     ],
 ];
