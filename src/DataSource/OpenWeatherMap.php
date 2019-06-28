@@ -11,6 +11,8 @@ use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
 use App\Domain\Entity\MeasureCollection;
+use App\Domain\ValueObject\DataSource;
+use App\Domain\ValueObject\MeasureCategory;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
@@ -22,8 +24,6 @@ use Exception;
 class OpenWeatherMap extends DataSourceAbstract
 {
     public const DATA_SOURCE_CODE = 'openweathermap';
-
-    public const CATEGORY_WEATHER = 'weather';
 
     protected $config = [
         'metrics' => [
@@ -71,8 +71,8 @@ class OpenWeatherMap extends DataSourceAbstract
                 ->setLocation($location)
                 ->setDatetimeUtc((new DateTimeImmutable())->setTimestamp($data->dt)->setTimezone(new DateTimeZone('UTC')))
                 ->setValue((float) $data->main->$metric)
-                ->setDataSource(self::DATA_SOURCE_CODE)
-                ->setCategory(self::CATEGORY_WEATHER);
+                ->setDataSource(DataSource::OPEN_WEATHER_MAP())
+                ->setCategory(MeasureCategory::WEATHER());
 
             $metrics[] = $metric;
         }

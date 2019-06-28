@@ -8,7 +8,6 @@ RUN set -ex \
     postgresql-dev
 RUN docker-php-ext-install pdo_pgsql
 
-
 # Install xdebug mysql and zip extensions
 #RUN apk add --no-cache --update --virtual buildDeps autoconf gcc musl-dev make zlib-dev \
 #     && pecl install xdebug \

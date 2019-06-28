@@ -7,8 +7,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Entity;
 
+use App\Domain\ValueObject\DataSource;
+use App\Domain\ValueObject\MeasureCategory;
 use DateTimeInterface;
-use DateTimeZone;
 
 /**
  * Class MeasureEntity
@@ -42,12 +43,12 @@ class MeasureEntity
     protected $datetimeUtc;
 
     /**
-     * @var string
+     * @var DataSource
      */
     protected $dataSource;
 
     /**
-     * @var string
+     * @var MeasureCategory
      */
     protected $category;
 
@@ -142,36 +143,36 @@ class MeasureEntity
     }
 
     /**
-     * @return string
+     * @return DataSource
      */
-    public function getDataSource(): string
+    public function getDataSource(): DataSource
     {
         return $this->dataSource;
     }
 
     /**
-     * @param string $dataSource
+     * @param DataSource $dataSource
      * @return MeasureEntity
      */
-    public function setDataSource(string $dataSource): MeasureEntity
+    public function setDataSource(DataSource $dataSource): MeasureEntity
     {
         $this->dataSource = $dataSource;
         return $this;
     }
 
     /**
-     * @return string
+     * @return MeasureCategory
      */
-    public function getCategory(): string
+    public function getCategory(): MeasureCategory
     {
         return $this->category;
     }
 
     /**
-     * @param string $category
+     * @param MeasureCategory $category
      * @return MeasureEntity
      */
-    public function setCategory(string $category): MeasureEntity
+    public function setCategory(MeasureCategory $category): MeasureEntity
     {
         $this->category = $category;
         return $this;

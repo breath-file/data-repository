@@ -54,8 +54,8 @@ class MeasureRepository implements MeasureRepositoryInterface
         $measure->name = $instantMeasure->getName();
         $measure->value = $instantMeasure->getValue();
         $measure->measured_at = $instantMeasure->getDatetimeUtc();
-        $measure->data_source_id = $this->dataSourceRepository->findOneByCode($instantMeasure->getDataSource())->data_source_id;
-        $measure->measure_category_id = $this->measureCategoryRepository->findOneByCode($instantMeasure->getCategory())->measure_category_id;
+        $measure->data_source_id = $this->dataSourceRepository->findOneByCode((string) $instantMeasure->getDataSource())->data_source_id;
+        $measure->measure_category_id = $this->measureCategoryRepository->findOneByCode((string) $instantMeasure->getCategory())->measure_category_id;
         $measure->save();
         return true;
     }

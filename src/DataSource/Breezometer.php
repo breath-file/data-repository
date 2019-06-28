@@ -20,13 +20,8 @@ use Exception;
  * Class Breezometer
  * @package App\DataSource
  */
-class Breezometer extends DataSourceAbstract implements DataSourceInterface
+class Breezometer extends DataSourceAbstract
 {
-    /**
-     * @var JsonRestGatewayClient
-     */
-    protected $client;
-
     /**
      * @var string
      */
