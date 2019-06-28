@@ -9,6 +9,7 @@ namespace App\Repository;
 
 use App\Domain\Entity\MeasureEntity;
 use App\Domain\Repository\MeasureRepositoryInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * Class MeasureRepository
@@ -16,6 +17,18 @@ use App\Domain\Repository\MeasureRepositoryInterface;
  */
 class MeasureRepository implements MeasureRepositoryInterface
 {
+    /** @var DataSourceRepository */
+    protected $dataSourceRepository;
+
+    /** @var MeasureCategoryRepository */
+    protected $measureCategoryRepository;
+
+    public function __construct(ContainerInterface $container)
+    {
+        $this->dataSourceRepository = $container->get(DataSourceRepository::class);
+        $this->measureCategoryRepository = $container->get(MeasureCategoryRepository::class);
+    }
+
     /**
      * @param MeasureEntity $instantMeasure
      * @return bool
@@ -23,7 +36,7 @@ class MeasureRepository implements MeasureRepositoryInterface
     public function save(MeasureEntity $instantMeasure): bool
     {
         $existingRow = Measure::whereRaw(
-            'location_id = ? and name = ? and measured_at_utc = ?',
+            'location_id = ? and name = ? and measured_at = ?',
             [
                 $instantMeasure->getLocation()->getId(),
                 $instantMeasure->getName(),
@@ -40,7 +53,9 @@ class MeasureRepository implements MeasureRepositoryInterface
         $measure->location_id = $instantMeasure->getLocation()->getId();
         $measure->name = $instantMeasure->getName();
         $measure->value = $instantMeasure->getValue();
-        $measure->measured_at_utc = $instantMeasure->getDatetimeUtc();
+        $measure->measured_at = $instantMeasure->getDatetimeUtc();
+        $measure->data_source_id = $this->dataSourceRepository->findOneByCode($instantMeasure->getDataSource())->data_source_id;
+        $measure->measure_category_id = $this->measureCategoryRepository->findOneByCode($instantMeasure->getCategory())->measure_category_id;
         $measure->save();
         return true;
     }

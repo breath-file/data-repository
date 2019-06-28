@@ -16,9 +16,11 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property int measure_id
  * @property int location_id
+ * @property int data_source_id
+ * @property int measure_category_id
  * @property string name
  * @property float value
- * @property Carbon measured_at_utc
+ * @property Carbon measured_at
  */
 class Measure extends Model
 {
@@ -28,10 +30,15 @@ class Measure extends Model
     protected $table = 'measure';
 
     /**
+     * @var string
+     */
+    protected $primaryKey = 'measure_id';
+
+    /**
      * @return array
      */
     public function getDates(): array
     {
-        return ['measured_at_utc', 'created_at', 'updated_at'];
+        return ['measured_at', 'created_at', 'updated_at'];
     }
 }

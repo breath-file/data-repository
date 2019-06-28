@@ -7,7 +7,9 @@ declare(strict_types=1);
 
 namespace App\DataSource;
 
+use App\Core\JsonRestGatewayClient;
 use App\Domain\Repository\DataSourceInterface;
+use Psr\Container\ContainerInterface;
 
 /**
  * Class DataSourceAbstract
@@ -15,6 +17,22 @@ use App\Domain\Repository\DataSourceInterface;
  */
 abstract class DataSourceAbstract implements DataSourceInterface
 {
+    /** @var ContainerInterface */
+    protected $container;
+
+    /** @var JsonRestGatewayClient */
+    protected $client;
+
+    /**
+     * DataSourceAbstract constructor.
+     * @param ContainerInterface $container
+     */
+    public function __construct(ContainerInterface $container)
+    {
+        $this->container = $container;
+        $this->client = $container->get(JsonRestGatewayClient::class);
+    }
+
     /**
      * @return string
      */

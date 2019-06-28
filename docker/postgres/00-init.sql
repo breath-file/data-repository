@@ -23,6 +23,7 @@ DROP TABLE IF EXISTS measure_category;
 CREATE TABLE measure_category
 (
     measure_category_id SERIAL PRIMARY KEY,
+    code                VARCHAR(30) NOT NULL,
     name                VARCHAR(255) NOT NULL,
     deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
 );
@@ -36,6 +37,7 @@ CREATE TABLE measure
     measure_category_id INT NOT NULL references measure_category(measure_category_id),
     name                VARCHAR(255) NOT NULL,
     value               FLOAT NOT NULL,
+    measured_at         TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
     updated_at          TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
     created_at          TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL
 );
@@ -70,8 +72,8 @@ INSERT INTO data_source (code, name) VALUES
 ('openweathermap', 'Open Weather Map'),
 ('breezometer', 'Breezometer');
 
-INSERT INTO measure_category (name) VALUES
-('weather'), ('pollution'), ('pollen');
+INSERT INTO measure_category (code, name) VALUES
+('weather', 'Weather'), ('pollution', 'Pollution'), ('pollen', 'Pollens');
 
 INSERT INTO task (command, description, schedule) VALUES
 ('ImportOpenWeatherMapTask', 'Retrieve data from Open Weather Map, Every 5 minutes', '*/5 * * * *');

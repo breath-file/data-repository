@@ -42,6 +42,16 @@ class MeasureEntity
     protected $datetimeUtc;
 
     /**
+     * @var string
+     */
+    protected $dataSource;
+
+    /**
+     * @var string
+     */
+    protected $category;
+
+    /**
      * @return string
      */
     public function getName(): string
@@ -128,6 +138,42 @@ class MeasureEntity
     public function setDatetimeUtc(DateTimeInterface $datetimeUtc): MeasureEntity
     {
         $this->datetimeUtc = $datetimeUtc;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDataSource(): string
+    {
+        return $this->dataSource;
+    }
+
+    /**
+     * @param string $dataSource
+     * @return MeasureEntity
+     */
+    public function setDataSource(string $dataSource): MeasureEntity
+    {
+        $this->dataSource = $dataSource;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCategory(): string
+    {
+        return $this->category;
+    }
+
+    /**
+     * @param string $category
+     * @return MeasureEntity
+     */
+    public function setCategory(string $category): MeasureEntity
+    {
+        $this->category = $category;
         return $this;
     }
 }

@@ -11,7 +11,6 @@ use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
 use App\Domain\Entity\MeasureCollection;
-use App\Domain\Repository\DataSourceInterface;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
@@ -20,8 +19,12 @@ use Exception;
  * Class OpenWeatherMap
  * @package App\DataSource
  */
-class OpenWeatherMap extends DataSourceAbstract implements DataSourceInterface
+class OpenWeatherMap extends DataSourceAbstract
 {
+    public const DATA_SOURCE_CODE = 'openweathermap';
+
+    public const CATEGORY_WEATHER = 'weather';
+
     protected $config = [
         'metrics' => [
             'temp'     => ['format' => '%0.2f'],
@@ -31,20 +34,20 @@ class OpenWeatherMap extends DataSourceAbstract implements DataSourceInterface
     ];
 
     protected $prefix = 'openweathermap';
-
-    /**
-     * @var JsonRestGatewayClient
-     */
-    protected $client;
-
-    /**
-     * WeatherExport constructor.
-     * @param JsonRestGatewayClient $client
-     */
-    public function __construct(JsonRestGatewayClient $client)
-    {
-        $this->client = $client;
-    }
+//
+//    /**
+//     * @var JsonRestGatewayClient
+//     */
+//    protected $client;
+//
+//    /**
+//     * WeatherExport constructor.
+//     * @param JsonRestGatewayClient $client
+//     */
+//    public function __construct(JsonRestGatewayClient $client)
+//    {
+//        $this->client = $client;
+//    }
 
     /**
      * @param LocationEntity $location
@@ -54,7 +57,6 @@ class OpenWeatherMap extends DataSourceAbstract implements DataSourceInterface
     public function getMetrics(LocationEntity $location): MeasureCollection
     {
         $metrics = new MeasureCollection();
-
         $data = $this->client->sendGet(
             '/openweathermap/weather',
             [
@@ -63,21 +65,14 @@ class OpenWeatherMap extends DataSourceAbstract implements DataSourceInterface
                 'units' => 'metric'
             ]);
 
-//        $route = sprintf(
-//            'https://api.jeckel-lab.fr/weather?lat=%s&lon=%s&api-key=%s&units=metric',
-//            $location->getLatitude(),
-//            $location->getLongitude(),
-//            getenv('API_KEY')
-//        );
-//        $data = json_decode(file_get_contents($route), false);
-
         foreach ($this->config['metrics'] as $metric=>$metricConfig) {
             $metric = (new MeasureEntity())
                 ->setName($this->generateMeasureName('weather', $metric))
                 ->setLocation($location)
                 ->setDatetimeUtc((new DateTimeImmutable())->setTimestamp($data->dt)->setTimezone(new DateTimeZone('UTC')))
-                //->setValue((float) sprintf($metricConfig['format'], $data->main->$metric));
-                ->setValue((float) $data->main->$metric);
+                ->setValue((float) $data->main->$metric)
+                ->setDataSource(self::DATA_SOURCE_CODE)
+                ->setCategory(self::CATEGORY_WEATHER);
 
             $metrics[] = $metric;
         }
@@ -91,5 +86,4 @@ class OpenWeatherMap extends DataSourceAbstract implements DataSourceInterface
     {
         return $this->prefix;
     }
-
 }

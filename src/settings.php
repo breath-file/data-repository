@@ -5,6 +5,13 @@ declare(strict_types=1);
  * Created at : 25/06/19
  */
 
+use App\DataSource\OpenWeatherMap;
+use App\Domain\Repository\LocationRepositoryInterface;
+use App\Domain\Repository\MeasureRepositoryInterface;
+use App\Repository\DataSourceRepository;
+use App\Repository\LocationRepository;
+use App\Repository\MeasureCategoryRepository;
+use App\Repository\MeasureRepository;
 use App\Task\ImportBreezometerTask;
 use App\Task\ImportOpenWeatherMapTask;
 use App\Task\TaskRunner;
@@ -39,6 +46,13 @@ return [
         ],
     ],
     'service_manager' => [
+        'instantiables' => [
+            DataSourceRepository::class => DataSourceRepository::class,
+            LocationRepositoryInterface::class => LocationRepository::class,
+            MeasureCategoryRepository::class => MeasureCategoryRepository::class,
+            MeasureRepositoryInterface::class => MeasureRepository::class,
+            OpenWeatherMap::class => OpenWeatherMap::class
+        ],
         'factories' => [
         ],
         'invokables' => [

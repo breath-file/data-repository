@@ -66,7 +66,7 @@ class TaskRunner implements TaskInterface, LoggerAwareInterface
             }
         }
 
-        return "Success\n";
+        return "Tasks completed\n";
     }
 
     /**
@@ -80,21 +80,24 @@ class TaskRunner implements TaskInterface, LoggerAwareInterface
         $history = $this->initHistory($task);
 
         $jobClass = $this->taskMap[$task->command];
+        $success = false;
         try {
             /** @var TaskInterface $job */
             $job = new $jobClass($this->container);
             $result = $job->command([]);
             $history->exit_code = 0;
             $history->comment = $result;
+            $this->logger->debug(sprintf("Task %s ==> Success: %s\n", $task->command, $result));
+            $success = true;
         } catch (Throwable $exception) {
             $history->exit_code = $exception->getCode() ?: 1;
             $history->comment = $exception->getMessage();
+            $this->logger->error(sprintf("Task %s ==> Error(%s): %s\n", $task->command, $exception->getCode(), $exception->getMessage()));
         } finally {
             $history->ended_at = new DateTime();
             $history->save();
         }
-        $this->logger->debug(sprintf("Task %s ==> success\n", $task->command));
-        return true;
+        return $success;
     }
 
     /**
