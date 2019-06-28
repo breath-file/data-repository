@@ -6,11 +6,5 @@ default:
 build:
 	@docker build -t weather-exporter .
 
-weather:
-	@docker-compose run --rm fpm php public/index.php OpenWeatherMap
-
-breezometer:
-	@docker-compose run --rm fpm php public/index.php Breezometer
-
-task:
-	@docker-compose run --rm fpm php public/index.php TaskRunner
+cron:
+	@docker-compose run --rm fpm php public/index.php cron

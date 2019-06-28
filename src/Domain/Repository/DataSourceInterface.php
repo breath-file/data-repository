@@ -9,8 +9,7 @@ namespace App\Domain\Repository;
 
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureCollection;
-use DateInterval;
-use Exception;
+use App\Domain\ValueObject\MeasureCategory;
 
 /**
  * Interface DataSourceInterface
@@ -19,9 +18,9 @@ use Exception;
 interface DataSourceInterface
 {
     /**
-     * @param LocationEntity $location
+     * @param LocationEntity       $location
+     * @param MeasureCategory|null $category
      * @return MeasureCollection
-     * @throws Exception
      */
-    public function getMetrics(LocationEntity $location): MeasureCollection;
+    public function getMeasures(LocationEntity $location, MeasureCategory $category = null): MeasureCollection;
 }

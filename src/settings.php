@@ -5,17 +5,17 @@ declare(strict_types=1);
  * Created at : 25/06/19
  */
 
+use App\Core\Cli\Cron\TaskProvider;
+use App\Core\Cli\CronCommand;
 use App\DataSource\Breezometer;
 use App\DataSource\OpenWeatherMap;
 use App\Domain\Repository\LocationRepositoryInterface;
 use App\Domain\Repository\MeasureRepositoryInterface;
-use App\Repository\DataSourceRepository;
 use App\Repository\LocationRepository;
-use App\Repository\MeasureCategoryRepository;
 use App\Repository\MeasureRepository;
-use App\Task\ImportBreezometerTask;
-use App\Task\ImportOpenWeatherMapTask;
-use App\Task\TaskRunner;
+use App\Repository\TaskHistoryRepository;
+use App\Repository\TaskRepository;
+use App\TaskOld\TaskRunner;
 use Monolog\Logger;
 
 return [
@@ -48,12 +48,18 @@ return [
     ],
     'service_manager' => [
         'instantiables' => [
+            // DataSources:
             Breezometer::class => Breezometer::class,
-            DataSourceRepository::class => DataSourceRepository::class,
+            OpenWeatherMap::class => OpenWeatherMap::class,
+
+            // Repositories
             LocationRepositoryInterface::class => LocationRepository::class,
-            MeasureCategoryRepository::class => MeasureCategoryRepository::class,
             MeasureRepositoryInterface::class => MeasureRepository::class,
-            OpenWeatherMap::class => OpenWeatherMap::class
+            TaskRepository::class => TaskRepository::class,
+            TaskHistoryRepository::class => TaskHistoryRepository::class,
+
+            // Services
+            TaskProvider::class => TaskProvider::class,
         ],
         'factories' => [
         ],
@@ -62,9 +68,8 @@ return [
         'initializers' => [
         ]
     ],
+    // Cli commands
     'commands' => [
-        'OpenWeatherMap' => ImportOpenWeatherMapTask::class,
-        'Breezometer'    => ImportBreezometerTask::class,
-        'TaskRunner'     => TaskRunner::class
+        'cron'  => CronCommand::class,
     ],
 ];

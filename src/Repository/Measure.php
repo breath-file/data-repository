@@ -17,8 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int measure_id
  * @property int location_id
- * @property int data_source_id
- * @property int measure_category_id
+ * @property string data_source
+ * @property string category
  * @property string name
  * @property float value
  * @property Carbon measured_at

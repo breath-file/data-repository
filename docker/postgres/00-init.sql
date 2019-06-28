@@ -16,31 +16,11 @@ CREATE TABLE location
     deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
 );
 
--- DROP TABLE IF EXISTS data_source;
--- CREATE TABLE data_source
--- (
---     data_source_id      SERIAL PRIMARY KEY,
---     code                VARCHAR(30) NOT NULL,
---     name                VARCHAR(255) NOT NULL,
---     deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
--- );
---
--- DROP TABLE IF EXISTS measure_category;
--- CREATE TABLE measure_category
--- (
---     measure_category_id SERIAL PRIMARY KEY,
---     code                VARCHAR(30) NOT NULL,
---     name                VARCHAR(255) NOT NULL,
---     deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
--- );
-
 DROP TABLE IF EXISTS measure;
 CREATE TABLE measure
 (
     measure_id          SERIAL PRIMARY KEY,
     location_id         INT NOT NULL references location(location_id),
---     data_source_id      INT NOT NULL references data_source(data_source_id),
---     measure_category_id INT NOT NULL references measure_category(measure_category_id),
     data_source         data_source,
     category            measure_category,
     name                VARCHAR(255) NOT NULL,
@@ -56,7 +36,7 @@ CREATE TABLE task
     task_id             SERIAL PRIMARY KEY,
     command             VARCHAR(255) NOT NULL,
     description         VARCHAR(255) NOT NULL,
-    schedule            VARCHAR(64) NOT NULL,
+    schedule            VARCHAR(64) NULL,
     deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
 );
 
@@ -72,17 +52,12 @@ CREATE TABLE task_history
 );
 
 INSERT INTO location (city, country, gps, latitude, longitude) VALUES
-('Choisy le Roi', 'FR', '(48.755286,2.409039)', 48.755286, 2.409039),
-('Paris', 'FR', '(48.8534,2.3488)', 48.8534, 2.3488),
-('Santiago', 'CL', '(-33.4691199,-70.641997)', -33.4691199, -70.641997);
+    ('Choisy le Roi', 'FR', '(48.755286,2.409039)', 48.755286, 2.409039),
+    ('Paris', 'FR', '(48.8534,2.3488)', 48.8534, 2.3488),
+    ('Santiago', 'CL', '(-33.4691199,-70.641997)', -33.4691199, -70.641997);
 
--- INSERT INTO data_source (code, name) VALUES
--- ('openweathermap', 'Open Weather Map'),
--- ('breezometer', 'Breezometer');
---
--- INSERT INTO measure_category (code, name) VALUES
--- ('weather', 'Weather'), ('pollution', 'Pollution'), ('pollen', 'Pollens');
---
 INSERT INTO task (command, description, schedule) VALUES
-('ImportOpenWeatherMapTask', 'Retrieve data from Open Weather Map, every 5 minutes', '*/5 * * * *'),
-('ImportBreezometerTask', 'Retrieve data from Breezometer, every 1 hour', '2 * * * *');
+    ('Cron-OpenWeatherMap', 'Retrieve data from Open Weather Map, every 5 minutes', '*/5 * * * *'),
+    ('Cron-Breezometer-Pollen', 'Retrieve data from Breezometer Pollen, every 1 hour', '2 * * * *'),
+    ('Cron-Breezometer-Pollution', 'Retrieve data from Breezometer Pollution, every 1 hour', '4 * * * *'),
+    ('Cron-Breezometer-Weather', 'Retrieve data from Breezometer Weather, every 1 hour', '6 * * * *');

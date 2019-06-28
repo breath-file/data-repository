@@ -21,8 +21,6 @@ use Exception;
  */
 class OpenWeatherMap extends DataSourceAbstract
 {
-    public const DATA_SOURCE_CODE = 'openweathermap';
-
     protected $config = [
         'metrics' => [
             'temp'     => ['format' => '%0.2f'],
@@ -32,11 +30,12 @@ class OpenWeatherMap extends DataSourceAbstract
     ];
 
     /**
-     * @param LocationEntity $location
+     * @param LocationEntity       $location
+     * @param MeasureCategory|null $category
      * @return MeasureCollection
      * @throws Exception
      */
-    public function getMetrics(LocationEntity $location): MeasureCollection
+    public function getMeasures(LocationEntity $location, MeasureCategory $category = null): MeasureCollection
     {
         $metrics = new MeasureCollection();
         $data = $this->client->sendGet(

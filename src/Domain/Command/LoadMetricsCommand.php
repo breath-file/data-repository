@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace App\Domain\Command;
 
 use App\Domain\Repository\DataSourceInterface;
+use App\Domain\ValueObject\MeasureCategory;
 
 /**
  * Class LoadMetricsCommand
@@ -19,14 +20,20 @@ class LoadMetricsCommand implements CommandInterface
      * @var DataSourceInterface
      */
     protected $dataSource;
+    /**
+     * @var MeasureCategory|null
+     */
+    protected $category;
 
     /**
      * LoadMetricsCommand constructor.
-     * @param DataSourceInterface $dataSource
+     * @param DataSourceInterface  $dataSource
+     * @param MeasureCategory|null $category
      */
-    public function __construct(DataSourceInterface $dataSource)
+    public function __construct(DataSourceInterface $dataSource, MeasureCategory $category = null)
     {
         $this->dataSource = $dataSource;
+        $this->category = $category;
     }
 
     /**
@@ -35,5 +42,13 @@ class LoadMetricsCommand implements CommandInterface
     public function getDataSource(): DataSourceInterface
     {
         return $this->dataSource;
+    }
+
+    /**
+     * @return MeasureCategory|null
+     */
+    public function getCategory(): ?MeasureCategory
+    {
+        return $this->category;
     }
 }

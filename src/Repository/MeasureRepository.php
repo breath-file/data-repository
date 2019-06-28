@@ -9,7 +9,6 @@ namespace App\Repository;
 
 use App\Domain\Entity\MeasureEntity;
 use App\Domain\Repository\MeasureRepositoryInterface;
-use Psr\Container\ContainerInterface;
 
 /**
  * Class MeasureRepository
@@ -17,18 +16,6 @@ use Psr\Container\ContainerInterface;
  */
 class MeasureRepository implements MeasureRepositoryInterface
 {
-    /** @var DataSourceRepository */
-    protected $dataSourceRepository;
-
-    /** @var MeasureCategoryRepository */
-    protected $measureCategoryRepository;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->dataSourceRepository = $container->get(DataSourceRepository::class);
-        $this->measureCategoryRepository = $container->get(MeasureCategoryRepository::class);
-    }
-
     /**
      * @param MeasureEntity $instantMeasure
      * @return bool
@@ -56,8 +43,6 @@ class MeasureRepository implements MeasureRepositoryInterface
         $measure->measured_at = $instantMeasure->getDatetimeUtc();
         $measure->data_source = (string) $instantMeasure->getDataSource();
         $measure->category = (string) $instantMeasure->getCategory();
-//        $measure->data_source_id = $this->dataSourceRepository->findOneByCode((string) $instantMeasure->getDataSource())->data_source_id;
-//        $measure->measure_category_id = $this->measureCategoryRepository->findOneByCode((string) $instantMeasure->getCategory())->measure_category_id;
         $measure->save();
         return true;
     }

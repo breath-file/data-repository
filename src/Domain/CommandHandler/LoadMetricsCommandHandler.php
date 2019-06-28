@@ -60,7 +60,7 @@ class LoadMetricsCommandHandler implements CommandHandlerInterface
         /** @var LocationEntity $location */
         foreach ($locations as $location) {
             /** @var MeasureEntity $measure */
-            foreach ($command->getDataSource()->getMetrics($location) as $measure) {
+            foreach ($command->getDataSource()->getMeasures($location, $command->getCategory()) as $measure) {
                 $this->measureRepository->save($measure);
             }
         }

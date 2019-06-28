@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 namespace App\DataSource;
 
-use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
 use App\Domain\Entity\MeasureCollection;
@@ -33,11 +32,22 @@ class Breezometer extends DataSourceAbstract
      * @return MeasureCollection
      * @throws Exception
      */
-    public function getMetrics(LocationEntity $location): MeasureCollection
+    public function getMeasures(LocationEntity $location, MeasureCategory $measureCategory = null): MeasureCollection
     {
-        return $this->loadPollen($location);
-//            ->merge($this->loadPollution($location))
-//            ->merge($this->loadWeather($location));
+        $measures = new MeasureCollection();
+        if ($measureCategory === null || $measureCategory == MeasureCategory::WEATHER()) {
+            $measures->merge($this->loadWeather($location));
+        }
+
+        if ($measureCategory === null || $measureCategory == MeasureCategory::POLLUTION()) {
+            $measures->merge($this->loadPollution($location));
+        }
+
+        if ($measureCategory === null || $measureCategory == MeasureCategory::POLLEN()) {
+            $measures->merge($this->loadPollen($location));
+        }
+
+        return $measures;
     }
 
     /**
@@ -69,8 +79,9 @@ class Breezometer extends DataSourceAbstract
                 'features' => 'types_information,plants_information'
             ]);
 
-        foreach ($data->data->types as $type=>$values) {
+        $dateMeasure = (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));
 
+        foreach ($data->data->types as $type=>$values) {
             if (! $values->data_available) {
                 continue;
             }
@@ -79,27 +90,22 @@ class Breezometer extends DataSourceAbstract
                 $location,
                 sprintf('type_%s', $type),
                 $values->index->value,
-                (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'))
+                $dateMeasure
             );
-//            $measures[] = (new MeasureEntity())
-//                ->setName(sprintf('%s_pollen_type_%s', $this->prefix, $type))
-//                ->setLocation($location)
-//                ->setValue($values->index->value)
-//                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
         }
 
-//        foreach ($data->data->plants as $plant=>$values) {
-//
-//            if (! $values->data_available) {
-//                continue;
-//            }
-//
-//            $measures[] = (new MeasureEntity())
-//                ->setName(sprintf('%s_pollen_plant_%s', $this->prefix, $plant))
-//                ->setLocation($location)
-//                ->setValue($values->index->value)
-//                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
-//        }
+        foreach ($data->data->plants as $plant=>$values) {
+            if (! $values->data_available) {
+                continue;
+            }
+            $measures[] = $this->factoryMeasureEntity(
+                MeasureCategory::POLLEN(),
+                $location,
+                sprintf('plant_%s', $plant),
+                $values->index->value,
+                $dateMeasure
+            );
+        }
 
         return $measures;
     }
@@ -119,39 +125,51 @@ class Breezometer extends DataSourceAbstract
                 'lon' => $location->getLongitude(),
                 'features' => 'breezometer_aqi,pollutants_concentrations,pollutants_aqi_information,local_aqi'
             ]);
+        $dateMeasure = (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));
 
         foreach ($data->data->pollutants as $key=>$pollutant) {
-            $measures[] = (new MeasureEntity())
-                ->setName(sprintf('%s_pollution_%s_%s', $this->prefix, $key, $pollutant->concentration->units))
-                ->setLocation($location)
-                ->setValue($pollutant->concentration->value)
-                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
-            $measures[] = (new MeasureEntity())
-                ->setName(sprintf('%s_pollution_%s_aqi', $this->prefix, $key))
-                ->setLocation($location)
-                ->setValue($pollutant->aqi_information->baqi->aqi)
-                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+            $measures[] = $this->factoryMeasureEntity(
+                MeasureCategory::POLLUTION(),
+                $location,
+                $key,
+                $pollutant->concentration->value,
+                $dateMeasure
+            );
+
+            $measures[] = $this->factoryMeasureEntity(
+                MeasureCategory::POLLUTION(),
+                $location,
+                sprintf('%s_aqi', $key),
+                $pollutant->aqi_information->baqi->aqi,
+                $dateMeasure
+            );
         }
 
-        $measures[] = (new MeasureEntity())
-            ->setLocation($location)
-            ->setName(sprintf('%s_pollution_aqi', $this->prefix))
-            ->setValue($data->data->indexes->baqi->aqi)
-            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        $measures[] = $this->factoryMeasureEntity(
+            MeasureCategory::POLLUTION(),
+            $location,
+            'aqi',
+            $data->data->indexes->baqi->aqi,
+            $dateMeasure
+        );
 
         if (property_exists($data->data->indexes, 'fra_atmo')) {
-            $measures[] = (new MeasureEntity())
-                ->setLocation($location)
-                ->setName(sprintf('%s_pollution_fra_atmo', $this->prefix))
-                ->setValue($data->data->indexes->fra_atmo->aqi)
-                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+            $measures[] = $this->factoryMeasureEntity(
+                MeasureCategory::POLLUTION(),
+                $location,
+                'fra_atmo',
+                $data->data->indexes->fra_atmo->aqi,
+                $dateMeasure
+            );
         }
         if (property_exists($data->data->indexes, 'usa_epa')) {
-            $measures[] = (new MeasureEntity())
-                ->setLocation($location)
-                ->setName(sprintf('%s_pollution_usa_epa', $this->prefix))
-                ->setValue($data->data->indexes->usa_epa->aqi)
-                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+            $measures[] = $this->factoryMeasureEntity(
+                MeasureCategory::POLLUTION(),
+                $location,
+                'usa_epa',
+                $data->data->indexes->usa_epa->aqi,
+                $dateMeasure
+            );
         }
 
         return $measures;
@@ -172,40 +190,52 @@ class Breezometer extends DataSourceAbstract
                 'lon' => $location->getLongitude()
             ]);
 
+        $dateMeasure = (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));
+
         // Temperature
-        $measures[] = (new MeasureEntity())
-            ->setLocation($location)
-            ->setName($this->generateMeasureName('weather', 'temp'))
-            ->setValue($data->data->temperature->value)
-            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        $measures[] = $this->factoryMeasureEntity(
+            MeasureCategory::WEATHER(),
+            $location,
+            'temp',
+            $data->data->temperature->value,
+            $dateMeasure
+        );
 
         // Humidity
-        $measures[] = (new MeasureEntity())
-            ->setLocation($location)
-            ->setName($this->generateMeasureName('weather', 'humidity'))
-            ->setValue($data->data->relative_humidity)
-            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        $measures[] = $this->factoryMeasureEntity(
+            MeasureCategory::WEATHER(),
+            $location,
+            'humidity',
+            $data->data->relative_humidity,
+            $dateMeasure
+        );
 
         // Pressure
-        $measures[] = (new MeasureEntity())
-            ->setLocation($location)
-            ->setName($this->generateMeasureName('weather', 'pressure'))
-            ->setValue($data->data->pressure->value)
-            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        $measures[] = $this->factoryMeasureEntity(
+            MeasureCategory::WEATHER(),
+            $location,
+            'pressure',
+            $data->data->pressure->value,
+            $dateMeasure
+        );
 
         // Precipitation Probability
-        $measures[] = (new MeasureEntity())
-            ->setLocation($location)
-            ->setName($this->generateMeasureName('weather', 'precipitation_probability'))
-            ->setValue($data->data->precipitation->precipitation_probability)
-            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        $measures[] = $this->factoryMeasureEntity(
+            MeasureCategory::WEATHER(),
+            $location,
+            'precipitation_probability',
+            $data->data->precipitation->precipitation_probability,
+            $dateMeasure
+        );
 
         // Total precipitation
-        $measures[] = (new MeasureEntity())
-            ->setLocation($location)
-            ->setName($this->generateMeasureName('weather', 'precipitation', 'mm', 'total'))
-            ->setValue($data->data->precipitation->total_precipitation->value)
-            ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+        $measures[] = $this->factoryMeasureEntity(
+            MeasureCategory::WEATHER(),
+            $location,
+            'precipitation_mm_total',
+            $data->data->precipitation->total_precipitation->value,
+            $dateMeasure
+        );
 
         return $measures;
     }

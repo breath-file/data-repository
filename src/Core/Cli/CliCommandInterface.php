@@ -2,15 +2,15 @@
 declare(strict_types=1);
 /**
  * @author Julien Mercier-Rojas <julien@jeckel-lab.fr>
- * Created at : 25/06/19
+ * Created at : 28/06/19
  */
 
-namespace App\Task;
+namespace App\Core\Cli;
 /**
- * Interface TaskInterface
- * @package App\Task
+ * Interface CliCommandInterface
+ * @package App\Core\Cli
  */
-interface TaskInterface
+interface CliCommandInterface
 {
     /**
      * @param array $args
