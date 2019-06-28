@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -32,4 +33,11 @@ class DataSource extends Model
      */
     protected $primaryKey = 'data_source_id';
 
+    /**
+     * @return HasMany
+     */
+    public function measures(): HasMany
+    {
+        return $this->hasMany(Measure::class, 'data_source_id', 'data_source_id');
+    }
 }

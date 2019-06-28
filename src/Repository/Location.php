@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -28,4 +29,12 @@ class Location extends Model
      * @var string
      */
     protected $table = 'location';
+
+    /**
+     * @return HasMany
+     */
+    public function measures(): HasMany
+    {
+        return $this->hasMany(Measure::class, 'location_id', 'location_id');
+    }
 }

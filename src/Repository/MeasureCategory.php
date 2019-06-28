@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -32,4 +33,11 @@ class MeasureCategory extends Model
      */
     protected $primaryKey = 'measure_category_id';
 
+    /**
+     * @return HasMany
+     */
+    public function measures(): HasMany
+    {
+        return $this->hasMany(Measure::class, 'measure_category_id', 'measure_category_id');
+    }
 }

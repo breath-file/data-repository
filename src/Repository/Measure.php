@@ -9,6 +9,7 @@ namespace App\Repository;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Class Measure
@@ -40,5 +41,29 @@ class Measure extends Model
     public function getDates(): array
     {
         return ['measured_at', 'created_at', 'updated_at'];
+    }
+
+    /**
+     * @return BelongsTo
+     */
+    public function dataSource(): BelongsTo
+    {
+        return $this->belongsTo(DataSource::class, 'data_source_id', 'data_source_id');
+    }
+
+    /**
+     * @return BelongsTo
+     */
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'location_id', 'location_id');
+    }
+
+    /**
+     * @return BelongsTo
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(MeasureCategory::class, 'measure_category_id', 'measure_category_id');
     }
 }
