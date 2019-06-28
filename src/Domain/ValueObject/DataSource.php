@@ -18,6 +18,6 @@ use MyCLabs\Enum\Enum;
  */
 class DataSource extends Enum
 {
-    public const OPEN_WEATHER_MAP = 'openweathermap';
-    public const BREEZOMETER      = 'breezometer';
+    public const OPEN_WEATHER_MAP = 'OpenWeatherMap';
+    public const BREEZOMETER      = 'Breezometer';
 }

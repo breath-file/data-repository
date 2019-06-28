@@ -1,3 +1,9 @@
+DROP TYPE IF EXISTS data_source CASCADE;
+CREATE TYPE data_source AS ENUM ('OpenWeatherMap', 'Breezometer');
+
+DROP TYPE IF EXISTS measure_category CASCADE;
+CREATE TYPE measure_category AS ENUM ('Weather', 'Pollution', 'Pollen');
+
 DROP TABLE IF EXISTS location;
 CREATE TABLE location
 (
@@ -10,31 +16,33 @@ CREATE TABLE location
     deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
 );
 
-DROP TABLE IF EXISTS data_source;
-CREATE TABLE data_source
-(
-    data_source_id      SERIAL PRIMARY KEY,
-    code                VARCHAR(30) NOT NULL,
-    name                VARCHAR(255) NOT NULL,
-    deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
-);
-
-DROP TABLE IF EXISTS measure_category;
-CREATE TABLE measure_category
-(
-    measure_category_id SERIAL PRIMARY KEY,
-    code                VARCHAR(30) NOT NULL,
-    name                VARCHAR(255) NOT NULL,
-    deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
-);
+-- DROP TABLE IF EXISTS data_source;
+-- CREATE TABLE data_source
+-- (
+--     data_source_id      SERIAL PRIMARY KEY,
+--     code                VARCHAR(30) NOT NULL,
+--     name                VARCHAR(255) NOT NULL,
+--     deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
+-- );
+--
+-- DROP TABLE IF EXISTS measure_category;
+-- CREATE TABLE measure_category
+-- (
+--     measure_category_id SERIAL PRIMARY KEY,
+--     code                VARCHAR(30) NOT NULL,
+--     name                VARCHAR(255) NOT NULL,
+--     deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
+-- );
 
 DROP TABLE IF EXISTS measure;
 CREATE TABLE measure
 (
     measure_id          SERIAL PRIMARY KEY,
     location_id         INT NOT NULL references location(location_id),
-    data_source_id      INT NOT NULL references data_source(data_source_id),
-    measure_category_id INT NOT NULL references measure_category(measure_category_id),
+--     data_source_id      INT NOT NULL references data_source(data_source_id),
+--     measure_category_id INT NOT NULL references measure_category(measure_category_id),
+    data_source         data_source,
+    category            measure_category,
     name                VARCHAR(255) NOT NULL,
     value               FLOAT NOT NULL,
     measured_at         TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
@@ -68,13 +76,13 @@ INSERT INTO location (city, country, gps, latitude, longitude) VALUES
 ('Paris', 'FR', '(48.8534,2.3488)', 48.8534, 2.3488),
 ('Santiago', 'CL', '(-33.4691199,-70.641997)', -33.4691199, -70.641997);
 
-INSERT INTO data_source (code, name) VALUES
-('openweathermap', 'Open Weather Map'),
-('breezometer', 'Breezometer');
-
-INSERT INTO measure_category (code, name) VALUES
-('weather', 'Weather'), ('pollution', 'Pollution'), ('pollen', 'Pollens');
-
+-- INSERT INTO data_source (code, name) VALUES
+-- ('openweathermap', 'Open Weather Map'),
+-- ('breezometer', 'Breezometer');
+--
+-- INSERT INTO measure_category (code, name) VALUES
+-- ('weather', 'Weather'), ('pollution', 'Pollution'), ('pollen', 'Pollens');
+--
 INSERT INTO task (command, description, schedule) VALUES
 ('ImportOpenWeatherMapTask', 'Retrieve data from Open Weather Map, every 5 minutes', '*/5 * * * *'),
 ('ImportBreezometerTask', 'Retrieve data from Breezometer, every 1 hour', '2 * * * *');

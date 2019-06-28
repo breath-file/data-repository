@@ -19,7 +19,7 @@ use MyCLabs\Enum\Enum;
  */
 class MeasureCategory extends Enum
 {
-    public const WEATHER = 'weather';
-    public const POLLUTION = 'pollution';
-    public const POLLEN = 'pollen';
+    public const WEATHER = 'Weather';
+    public const POLLUTION = 'Pollution';
+    public const POLLEN = 'Pollen';
 }
