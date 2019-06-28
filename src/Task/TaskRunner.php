@@ -35,7 +35,8 @@ class TaskRunner implements TaskInterface, LoggerAwareInterface
      * @var array
      */
     protected $taskMap = [
-        'ImportOpenWeatherMapTask' => ImportOpenWeatherMapTask::class
+        'ImportOpenWeatherMapTask' => ImportOpenWeatherMapTask::class,
+        'ImportBreezometerTask' => ImportBreezometerTask::class
     ];
 
     /**

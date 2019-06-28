@@ -11,7 +11,8 @@ use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
 use App\Domain\Entity\MeasureEntity;
 use App\Domain\Entity\MeasureCollection;
-use App\Domain\Repository\DataSourceInterface;
+use App\Domain\ValueObject\DataSource;
+use App\Domain\ValueObject\MeasureCategory;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
@@ -28,24 +29,23 @@ class Breezometer extends DataSourceAbstract
     protected $prefix = 'breezometer';
 
     /**
-     * Breezometer constructor.
-     * @param JsonRestGatewayClient $client
-     */
-    public function __construct(JsonRestGatewayClient $client)
-    {
-        $this->client = $client;
-    }
-
-    /**
      * @param LocationEntity $location
      * @return MeasureCollection
      * @throws Exception
      */
     public function getMetrics(LocationEntity $location): MeasureCollection
     {
-        return $this->loadPollen($location)
-            ->merge($this->loadPollution($location))
-            ->merge($this->loadWeather($location));
+        return $this->loadPollen($location);
+//            ->merge($this->loadPollution($location))
+//            ->merge($this->loadWeather($location));
+    }
+
+    /**
+     * @return DataSource
+     */
+    protected function getDataSource(): DataSource
+    {
+        return DataSource::BREEZOMETER();
     }
 
     /**
@@ -74,27 +74,32 @@ class Breezometer extends DataSourceAbstract
             if (! $values->data_available) {
                 continue;
             }
-            $measures[] = (new MeasureEntity())
-                ->setName(sprintf('%s_pollen_type_%s', $this->prefix, $type))
-                ->setLocation($location)
-                ->setValue($values->index->value)
-                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
-
-
+            $measures[] = $this->factoryMeasureEntity(
+                MeasureCategory::POLLEN(),
+                $location,
+                sprintf('type_%s', $type),
+                $values->index->value,
+                (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'))
+            );
+//            $measures[] = (new MeasureEntity())
+//                ->setName(sprintf('%s_pollen_type_%s', $this->prefix, $type))
+//                ->setLocation($location)
+//                ->setValue($values->index->value)
+//                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
         }
 
-        foreach ($data->data->plants as $plant=>$values) {
-
-            if (! $values->data_available) {
-                continue;
-            }
-
-            $measures[] = (new MeasureEntity())
-                ->setName(sprintf('%s_pollen_plant_%s', $this->prefix, $plant))
-                ->setLocation($location)
-                ->setValue($values->index->value)
-                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
-        }
+//        foreach ($data->data->plants as $plant=>$values) {
+//
+//            if (! $values->data_available) {
+//                continue;
+//            }
+//
+//            $measures[] = (new MeasureEntity())
+//                ->setName(sprintf('%s_pollen_plant_%s', $this->prefix, $plant))
+//                ->setLocation($location)
+//                ->setValue($values->index->value)
+//                ->setDatetimeUtc((new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC')));
+//        }
 
         return $measures;
     }

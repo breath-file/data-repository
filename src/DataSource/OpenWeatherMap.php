@@ -7,9 +7,7 @@ declare(strict_types=1);
 
 namespace App\DataSource;
 
-use App\Core\JsonRestGatewayClient;
 use App\Domain\Entity\LocationEntity;
-use App\Domain\Entity\MeasureEntity;
 use App\Domain\Entity\MeasureCollection;
 use App\Domain\ValueObject\DataSource;
 use App\Domain\ValueObject\MeasureCategory;
@@ -33,22 +31,6 @@ class OpenWeatherMap extends DataSourceAbstract
         ]
     ];
 
-    protected $prefix = 'openweathermap';
-//
-//    /**
-//     * @var JsonRestGatewayClient
-//     */
-//    protected $client;
-//
-//    /**
-//     * WeatherExport constructor.
-//     * @param JsonRestGatewayClient $client
-//     */
-//    public function __construct(JsonRestGatewayClient $client)
-//    {
-//        $this->client = $client;
-//    }
-
     /**
      * @param LocationEntity $location
      * @return MeasureCollection
@@ -66,24 +48,22 @@ class OpenWeatherMap extends DataSourceAbstract
             ]);
 
         foreach ($this->config['metrics'] as $metric=>$metricConfig) {
-            $metric = (new MeasureEntity())
-                ->setName($this->generateMeasureName('weather', $metric))
-                ->setLocation($location)
-                ->setDatetimeUtc((new DateTimeImmutable())->setTimestamp($data->dt)->setTimezone(new DateTimeZone('UTC')))
-                ->setValue((float) $data->main->$metric)
-                ->setDataSource(DataSource::OPEN_WEATHER_MAP())
-                ->setCategory(MeasureCategory::WEATHER());
-
-            $metrics[] = $metric;
+            $metrics[] = $this->factoryMeasureEntity(
+                MeasureCategory::WEATHER(),
+                $location,
+                $metric,
+                (float) $data->main->$metric,
+                (new DateTimeImmutable())->setTimestamp($data->dt)->setTimezone(new DateTimeZone('UTC'))
+            );
         }
         return $metrics;
     }
 
     /**
-     * @return string
+     * @return DataSource
      */
-    protected function getMeasurePrefix(): string
+    protected function getDataSource(): DataSource
     {
-        return $this->prefix;
+        return DataSource::OPEN_WEATHER_MAP();
     }
 }

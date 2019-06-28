@@ -5,6 +5,7 @@ declare(strict_types=1);
  * Created at : 25/06/19
  */
 
+use App\DataSource\Breezometer;
 use App\DataSource\OpenWeatherMap;
 use App\Domain\Repository\LocationRepositoryInterface;
 use App\Domain\Repository\MeasureRepositoryInterface;
@@ -47,6 +48,7 @@ return [
     ],
     'service_manager' => [
         'instantiables' => [
+            Breezometer::class => Breezometer::class,
             DataSourceRepository::class => DataSourceRepository::class,
             LocationRepositoryInterface::class => LocationRepository::class,
             MeasureCategoryRepository::class => MeasureCategoryRepository::class,

@@ -42,33 +42,22 @@ $container['db'] = function($c) use ($capsule){
     return $capsule;
 };
 
-//var_dump($container['service_manager']);
-
+// Register services
+/**
+ * @var string $key
+ * @var string $classname
+ */
 foreach($container['service_manager']['instantiables'] as $key=>$classname) {
     $container[$key] = static function (ContainerInterface $c) use ($classname) { return new $classname($c); };
 }
 
-//$container[LocationRepositoryInterface::class] = static function(ContainerInterface $c) {
-//    return new LocationRepository();
-//};
-//$container[MeasureRepositoryInterface::class] = static function(ContainerInterface $c) {
-//    return new MeasureRepository();
-//};
-
 $container[PrometheusFormatter::class] = static function(ContainerInterface $c) {
     return new PrometheusFormatter('omeglast_weather_');
 };
-
 $container[JsonRestGatewayClient::class] = static function(ContainerInterface $c) {
     $settings = $c->get('settings')['api_gateway'];
     return new JsonRestGatewayClient($settings['host'], $settings['api_key']);
 };
-$container[Breezometer::class] = static function(ContainerInterface $c) {
-    return new Breezometer($c->get(JsonRestGatewayClient::class));
-};
-//$container[OpenWeatherMap::class] = static function(ContainerInterface $c) {
-//    return new OpenWeatherMap($c->get(JsonRestGatewayClient::class));
-//};
 
 require_once 'commands.php';
 require_once 'controllers.php';

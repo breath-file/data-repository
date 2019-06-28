@@ -14,8 +14,10 @@ use MyCLabs\Enum\Enum;
  * @package App\Domain\ValueObject
  *
  * @method static OPEN_WEATHER_MAP(): DataSource
+ * @method static BREEZOMETER(): DataSource
  */
 class DataSource extends Enum
 {
     public const OPEN_WEATHER_MAP = 'openweathermap';
+    public const BREEZOMETER      = 'breezometer';
 }

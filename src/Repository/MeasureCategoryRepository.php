@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use RuntimeException;
+
 /**
  * Class MeasureCategoryRepository
  * @package App\Repository
@@ -25,7 +27,11 @@ class MeasureCategoryRepository
     public function findOneByCode(string $code): MeasureCategory
     {
         if (! isset($this->loadedCategories[$code])) {
-            $this->loadedCategories[$code] = MeasureCategory::where('code', '=', $code)->findOrFail(1);
+            $result = MeasureCategory::where('code', '=', $code)->get();
+            if (count($result) !== 1) {
+                throw new RuntimeException('Error');
+            }
+            $this->loadedCategories[$code] = $result[0];
         }
         return $this->loadedCategories[$code];
     }

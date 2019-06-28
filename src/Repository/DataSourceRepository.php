@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use RuntimeException;
+
 /**
  * Class DataSourceRepository
  * @package App\Repository
@@ -21,11 +23,16 @@ class DataSourceRepository
     /**
      * @param string $code
      * @return DataSource
+     * @throws RuntimeException
      */
     public function findOneByCode(string $code): DataSource
     {
         if (! isset($this->loadedDataSources[$code])) {
-            $this->loadedDataSources[$code] = DataSource::where('code', '=', $code)->findOrFail(1);
+            $result = DataSource::where('code', '=', $code)->get();
+            if (count($result) !== 1) {
+                throw new RuntimeException('Error');
+            }
+            $this->loadedDataSources[$code] = $result[0];
         }
         return $this->loadedDataSources[$code];
     }

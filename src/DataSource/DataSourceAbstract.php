@@ -8,7 +8,12 @@ declare(strict_types=1);
 namespace App\DataSource;
 
 use App\Core\JsonRestGatewayClient;
+use App\Domain\Entity\LocationEntity;
+use App\Domain\Entity\MeasureEntity;
 use App\Domain\Repository\DataSourceInterface;
+use App\Domain\ValueObject\DataSource;
+use App\Domain\ValueObject\MeasureCategory;
+use DateTimeInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -34,20 +39,49 @@ abstract class DataSourceAbstract implements DataSourceInterface
     }
 
     /**
-     * @return string
+     * @return DataSource
      */
-    abstract protected function getMeasurePrefix(): string;
+    abstract protected function getDataSource(): DataSource;
 
     /**
-     * @param string      $category
+     * @param MeasureCategory $category
      * @param string      $metric
      * @param string|null $unit
      * @param string|null $group
      * @return string
      */
-    protected function generateMeasureName(string $category, string $metric, string $unit = null, string $group = null): string
+    protected function generateMeasureName(MeasureCategory $category, string $metric, string $unit = null, string $group = null): string
     {
         // @todo Cleanup unit
-        return implode('_', array_filter([$this->getMeasurePrefix(), $category, $metric, $unit, $group]));
+        return implode('_', array_filter([
+            (string) $this->getDataSource(),
+            (string) $category,
+            $metric,
+            $unit,
+            $group
+        ]));
+    }
+
+    /**
+     * @param MeasureCategory   $category
+     * @param LocationEntity    $location
+     * @param string            $metric
+     * @param float             $value
+     * @param DateTimeInterface $measureTime
+     * @return MeasureEntity
+     */
+    protected function factoryMeasureEntity(MeasureCategory $category, LocationEntity $location, string $metric, float $value, DateTimeInterface $measureTime): MeasureEntity
+    {
+        return (new MeasureEntity())
+            ->setDataSource($this->getDataSource())
+            ->setCategory($category)
+            ->setLocation($location)
+            ->setName(
+                $this->generateMeasureName(
+                    $category, $metric
+                )
+            )
+            ->setValue($value)
+            ->setDatetimeUtc($measureTime);
     }
 }
