@@ -9,6 +9,8 @@ use App\Core\Cli\Cron\TaskProvider;
 use App\Core\Cli\CronCommand;
 use App\DataSource\Breezometer;
 use App\DataSource\OpenWeatherMap;
+use App\Domain\CommandHandler\AddMeasureCommandHandler;
+use App\Domain\CommandHandler\LoadMetricsCommandHandler;
 use App\Domain\Repository\LocationRepositoryInterface;
 use App\Domain\Repository\MeasureRepositoryInterface;
 use App\Repository\LocationRepository;
@@ -61,12 +63,16 @@ return [
             // Services
             TaskProvider::class => TaskProvider::class,
         ],
-        'factories' => [
+        'commandHandlers' => [
+            AddMeasureCommandHandler::class,
+            LoadMetricsCommandHandler::class,
         ],
-        'invokables' => [
-        ],
-        'initializers' => [
-        ]
+//        'factories' => [
+//        ],
+//        'invokables' => [
+//        ],
+//        'initializers' => [
+//        ]
     ],
     // Cli commands
     'commands' => [

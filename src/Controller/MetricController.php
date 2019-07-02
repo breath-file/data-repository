@@ -10,6 +10,7 @@ namespace App\Controller;
 use App\Domain\Entity\MeasureEntity;
 use App\Formatter\PrometheusFormatter;
 use DateTimeImmutable;
+use Exception;
 use Illuminate\Database\Capsule\Manager;
 use Illuminate\Support\Facades\DB;
 use Slim\Http\Request;
@@ -27,7 +28,7 @@ class MetricController extends ControllerAbstract
      * @param Response $response
      * @param array    $args
      * @return Response
-     * @throws \Exception
+     * @throws Exception
      */
     public function getMetrics(Request $request, Response $response, array $args): Response
     {
@@ -37,21 +38,22 @@ class MetricController extends ControllerAbstract
         $db = $this->container->get('db');
 
 
-        $results = $db->getConnection()->select('SELECT o.location_id, o.name, o.value, o.measured_at_utc
+        $results = $db->getConnection()->select('SELECT o.location_id, o.name, o.value, o.measured_at
             FROM measure AS o
             LEFT JOIN measure AS b
               ON o.location_id = b.location_id
                 AND o.name = b.name
-                AND o.measured_at_utc < b.measured_at_utc
+                AND o.measured_at < b.measured_at
             WHERE b.name IS NULL;');
 
         foreach($results as $row) {
             $response->getBody()->write(
                 sprintf(
-                    "%s %f %d\n",
+                    "%s_%s %f %d\n",
+                    'Omeglast',
                     $row->name,
                     $row->value,
-                    (new DateTimeImmutable($row->measured_at_utc))->getTimestamp()
+                    (new DateTimeImmutable($row->measured_at))->getTimestamp()
                 )
             );
         }

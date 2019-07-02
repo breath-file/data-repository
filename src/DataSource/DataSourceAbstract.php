@@ -7,26 +7,39 @@ declare(strict_types=1);
 
 namespace App\DataSource;
 
+use App\Core\CommandDispatcher;
 use App\Core\JsonRestGatewayClient;
-use App\Domain\Entity\LocationEntity;
-use App\Domain\Entity\MeasureEntity;
+use App\Domain\Command\AddMeasureCommand;
+use App\Domain\CommandHandler\CommandResult;
 use App\Domain\Repository\DataSourceInterface;
-use App\Domain\ValueObject\DataSource;
-use App\Domain\ValueObject\MeasureCategory;
-use DateTimeInterface;
+use App\Domain\ValueObject\MeasureMetric;
+use App\Domain\ValueObject\MeasureUnit;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 
 /**
  * Class DataSourceAbstract
  * @package App\DataSource
  */
-abstract class DataSourceAbstract implements DataSourceInterface
+abstract class DataSourceAbstract implements DataSourceInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /** @var ContainerInterface */
     protected $container;
 
     /** @var JsonRestGatewayClient */
     protected $client;
+
+    /** @var CommandDispatcher */
+    protected $commandDispatcher;
+
+    /** @var array */
+    protected $metricMap = [];
+
+    /** @var array */
+    protected $unitMap = [];
 
     /**
      * DataSourceAbstract constructor.
@@ -36,52 +49,40 @@ abstract class DataSourceAbstract implements DataSourceInterface
     {
         $this->container = $container;
         $this->client = $container->get(JsonRestGatewayClient::class);
+        $this->commandDispatcher = $container->get(CommandDispatcher::class);
+        $this->logger = $container->get('logger');
     }
 
     /**
-     * @return DataSource
+     * @param AddMeasureCommand $command
+     * @return CommandResult
      */
-    abstract protected function getDataSource(): DataSource;
-
-    /**
-     * @param MeasureCategory $category
-     * @param string      $metric
-     * @param string|null $unit
-     * @param string|null $group
-     * @return string
-     */
-    protected function generateMeasureName(MeasureCategory $category, string $metric, string $unit = null, string $group = null): string
+    public function dispatch(AddMeasureCommand $command): CommandResult
     {
-        // @todo Cleanup unit
-        return implode('_', array_filter([
-            (string) $this->getDataSource(),
-            (string) $category,
-            $metric,
-            $unit,
-            $group
-        ]));
+        return $this->commandDispatcher->dispatch($command);
     }
 
     /**
-     * @param MeasureCategory   $category
-     * @param LocationEntity    $location
-     * @param string            $metric
-     * @param float             $value
-     * @param DateTimeInterface $measureTime
-     * @return MeasureEntity
+     * @param string $metric
+     * @return MeasureMetric
      */
-    protected function factoryMeasureEntity(MeasureCategory $category, LocationEntity $location, string $metric, float $value, DateTimeInterface $measureTime): MeasureEntity
+    protected function normalizeMetric(string $metric): MeasureMetric
     {
-        return (new MeasureEntity())
-            ->setDataSource($this->getDataSource())
-            ->setCategory($category)
-            ->setLocation($location)
-            ->setName(
-                $this->generateMeasureName(
-                    $category, $metric
-                )
-            )
-            ->setValue($value)
-            ->setDatetimeUtc($measureTime);
+        if (! isset($this->metricMap[$metric])) {
+            throw new MeasureMappingException(sprintf('Unknown metric %s', $metric));
+        }
+        return $this->metricMap[$metric];
+    }
+
+    /**
+     * @param string $metric
+     * @return MeasureUnit
+     */
+    protected function normalizeUnit(string $metric): MeasureUnit
+    {
+        if (! isset($this->unitMap[$metric])) {
+            throw new MeasureMappingException(sprintf('Unknown metric %s', $metric));
+        }
+        return $this->unitMap[$metric];
     }
 }

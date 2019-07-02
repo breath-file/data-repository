@@ -9,27 +9,19 @@ use App\Core\CommandDispatcher;
 use App\DataSource\Breezometer;
 use App\DataSource\OpenWeatherMap;
 use App\Domain\Command\LoadMetricsCommand;
-use App\Domain\CommandHandler\LoadMetricsCommandHandler;
-use App\Domain\Repository\LocationRepositoryInterface;
-use App\Domain\Repository\MeasureRepositoryInterface;
 use App\Domain\ValueObject\MeasureCategory;
 use Psr\Container\ContainerInterface;
 
 $container = $app->getContainer();
 
-$container[LoadMetricsCommandHandler::class] = static function(ContainerInterface $c) {
-    /** @var LocationRepositoryInterface $locationRepository */
-    $locationRepository = $c->get(LocationRepositoryInterface::class);
-
-    /** @var MeasureRepositoryInterface $measureRepository */
-    $measureRepository = $c->get(MeasureRepositoryInterface::class);
-    return new LoadMetricsCommandHandler($locationRepository, $measureRepository);
-};
-
-
+// Register CommandDispatcher and CommandHandlers
 $container[CommandDispatcher::class] = static function(ContainerInterface $c) {
     $dispatcher = new CommandDispatcher($c);
-    $dispatcher->map(LoadMetricsCommandHandler::getSupportedCommands(), LoadMetricsCommandHandler::class);
+    foreach($c['service_manager']['commandHandlers'] as $handlerClassname) {
+        $c[$handlerClassname] = static function (ContainerInterface $c) use ($handlerClassname) { return new $handlerClassname($c); };
+        $dispatcher->map($handlerClassname::getSupportedCommands(), $handlerClassname);
+    }
+
     return $dispatcher;
 };
 

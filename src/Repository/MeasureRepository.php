@@ -27,7 +27,7 @@ class MeasureRepository implements MeasureRepositoryInterface
             [
                 $instantMeasure->getLocation()->getId(),
                 $instantMeasure->getName(),
-                $instantMeasure->getDatetimeUtc()
+                $instantMeasure->getMeasuredDate()
             ]
         )->first();
 
@@ -38,11 +38,13 @@ class MeasureRepository implements MeasureRepositoryInterface
 
         $measure = new Measure();
         $measure->location_id = $instantMeasure->getLocation()->getId();
-        $measure->name = $instantMeasure->getName();
-        $measure->value = $instantMeasure->getValue();
-        $measure->measured_at = $instantMeasure->getDatetimeUtc();
         $measure->data_source = (string) $instantMeasure->getDataSource();
         $measure->category = (string) $instantMeasure->getCategory();
+        $measure->metric = (string) $instantMeasure->getMetric();
+        $measure->unit = (string) $instantMeasure->getUnit();
+        $measure->name = $instantMeasure->getName();
+        $measure->value = $instantMeasure->getValue();
+        $measure->measured_at = $instantMeasure->getMeasuredDate();
         $measure->save();
         return true;
     }

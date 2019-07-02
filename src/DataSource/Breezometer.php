@@ -7,14 +7,18 @@ declare(strict_types=1);
 
 namespace App\DataSource;
 
+use App\Domain\Command\AddMeasureCommand;
 use App\Domain\Entity\LocationEntity;
-use App\Domain\Entity\MeasureEntity;
 use App\Domain\Entity\MeasureCollection;
 use App\Domain\ValueObject\DataSource;
 use App\Domain\ValueObject\MeasureCategory;
+use App\Domain\ValueObject\MeasureMetric;
+use App\Domain\ValueObject\MeasureUnit;
 use DateTimeImmutable;
+use DateTimeInterface;
 use DateTimeZone;
 use Exception;
+use Psr\Container\ContainerInterface;
 
 /**
  * Class Breezometer
@@ -22,13 +26,78 @@ use Exception;
  */
 class Breezometer extends DataSourceAbstract
 {
-    /**
-     * @var string
-     */
-    protected $prefix = 'breezometer';
+    /** @var DataSource */
+    protected $dataSource;
+
+    /** @var LocationEntity */
+    protected $currentLocation;
+
+    /** @var MeasureCategory */
+    protected $currentCategory;
+
+    /** @var DateTimeInterface */
+    protected $currentDateMeasured;
 
     /**
-     * @param LocationEntity $location
+     * Breezometer constructor.
+     * @param ContainerInterface $container
+     */
+    public function __construct(ContainerInterface $container)
+    {
+        parent::__construct($container);
+
+        $this->metricMap = [
+            'graminales' => MeasureMetric::POLLEN_GRAMINALES(),
+            'grass'      => MeasureMetric::POLLEN_GRASS(),
+            'ragweed'    => MeasureMetric::POLLEN_RAGWEED(),
+            'tree'       => MeasureMetric::POLLEN_TREE(),
+            'weed'       => MeasureMetric::POLLEN_WEED(),
+            'co'         => MeasureMetric::CARBON_MONOXIDE(),
+            'co_aqi'     => MeasureMetric::CARBON_MONOXIDE(),
+            'no2'        => MeasureMetric::NITROGEN_DIOXIDE(),
+            'no2_aqi'    => MeasureMetric::NITROGEN_DIOXIDE(),
+            'o3'         => MeasureMetric::OZONE(),
+            'o3_aqi'     => MeasureMetric::OZONE(),
+            'pm10'       => MeasureMetric::PM10_PARTICLES(),
+            'pm10_aqi'   => MeasureMetric::PM10_PARTICLES(),
+            'pm25'       => MeasureMetric::PM2_5_PARTICLES(),
+            'pm25_aqi'   => MeasureMetric::PM2_5_PARTICLES(),
+            'so2'        => MeasureMetric::SULPHUR_DIOXIDE(),
+            'so2_aqi'    => MeasureMetric::SULPHUR_DIOXIDE(),
+            'temp'       => MeasureMetric::TEMPERATURE(),
+            'humidity'   => MeasureMetric::HUMIDITY(),
+            'pressure'   => MeasureMetric::PRESSURE(),
+        ];
+
+        $this->unitMap = [
+            'graminales' => MeasureUnit::INDEX(),
+            'grass'      => MeasureUnit::INDEX(),
+            'ragweed'    => MeasureUnit::INDEX(),
+            'tree'       => MeasureUnit::INDEX(),
+            'weed'       => MeasureUnit::INDEX(),
+            'co'         => MeasureUnit::MICROGRAMS_M3(),
+            'co_aqi'     => MeasureUnit::PERCENT(),
+            'no2'        => MeasureUnit::MICROGRAMS_M3(),
+            'no2_aqi'    => MeasureUnit::PERCENT(),
+            'o3'         => MeasureUnit::MICROGRAMS_M3(),
+            'o3_aqi'     => MeasureUnit::PERCENT(),
+            'pm10'       => MeasureUnit::MICROGRAMS_M3(),
+            'pm10_aqi'   => MeasureUnit::PERCENT(),
+            'pm25'       => MeasureUnit::MICROGRAMS_M3(),
+            'pm25_aqi'   => MeasureUnit::PERCENT(),
+            'so2'        => MeasureUnit::MICROGRAMS_M3(),
+            'so2_aqi'    => MeasureUnit::PERCENT(),
+            'temp'       => MeasureUnit::CELSIUS(),
+            'humidity'   => MeasureUnit::PERCENT(),
+            'pressure'   => MeasureUnit::HECTOPASCAL(),
+        ];
+
+        $this->dataSource = DataSource::BREEZOMETER();
+    }
+
+    /**
+     * @param LocationEntity       $location
+     * @param MeasureCategory|null $measureCategory
      * @return MeasureCollection
      * @throws Exception
      */
@@ -48,14 +117,6 @@ class Breezometer extends DataSourceAbstract
         }
 
         return $measures;
-    }
-
-    /**
-     * @return DataSource
-     */
-    protected function getDataSource(): DataSource
-    {
-        return DataSource::BREEZOMETER();
     }
 
     /**
@@ -79,32 +140,16 @@ class Breezometer extends DataSourceAbstract
                 'features' => 'types_information,plants_information'
             ]);
 
-        $dateMeasure = (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));
+        $this->currentLocation = $location;
+        $this->currentCategory = MeasureCategory::POLLEN();
+        $this->currentDateMeasured =  (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));;
 
-        foreach ($data->data->types as $type=>$values) {
-            if (! $values->data_available) {
-                continue;
-            }
-            $measures[] = $this->factoryMeasureEntity(
-                MeasureCategory::POLLEN(),
-                $location,
-                sprintf('type_%s', $type),
-                $values->index->value,
-                $dateMeasure
-            );
+        foreach ($data->data->types as $metric=>$values) {
+            $this->processMeasureRow($metric, $values->index->value);
         }
 
-        foreach ($data->data->plants as $plant=>$values) {
-            if (! $values->data_available) {
-                continue;
-            }
-            $measures[] = $this->factoryMeasureEntity(
-                MeasureCategory::POLLEN(),
-                $location,
-                sprintf('plant_%s', $plant),
-                $values->index->value,
-                $dateMeasure
-            );
+        foreach ($data->data->plants as $metric=>$values) {
+            $this->processMeasureRow($metric, $values->index->value);
         }
 
         return $measures;
@@ -125,53 +170,14 @@ class Breezometer extends DataSourceAbstract
                 'lon' => $location->getLongitude(),
                 'features' => 'breezometer_aqi,pollutants_concentrations,pollutants_aqi_information,local_aqi'
             ]);
-        $dateMeasure = (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));
+        $this->currentLocation = $location;
+        $this->currentCategory = MeasureCategory::POLLUTION();
+        $this->currentDateMeasured =  (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));;
 
-        foreach ($data->data->pollutants as $key=>$pollutant) {
-            $measures[] = $this->factoryMeasureEntity(
-                MeasureCategory::POLLUTION(),
-                $location,
-                $key,
-                $pollutant->concentration->value,
-                $dateMeasure
-            );
-
-            $measures[] = $this->factoryMeasureEntity(
-                MeasureCategory::POLLUTION(),
-                $location,
-                sprintf('%s_aqi', $key),
-                $pollutant->aqi_information->baqi->aqi,
-                $dateMeasure
-            );
+        foreach ($data->data->pollutants as $pollutant=>$values) {
+            $this->processMeasureRow($pollutant, $values->concentration->value);
+            $this->processMeasureRow(sprintf('%s_aqi', $pollutant), $values->aqi_information->baqi->aqi);
         }
-
-        $measures[] = $this->factoryMeasureEntity(
-            MeasureCategory::POLLUTION(),
-            $location,
-            'aqi',
-            $data->data->indexes->baqi->aqi,
-            $dateMeasure
-        );
-
-        if (property_exists($data->data->indexes, 'fra_atmo')) {
-            $measures[] = $this->factoryMeasureEntity(
-                MeasureCategory::POLLUTION(),
-                $location,
-                'fra_atmo',
-                $data->data->indexes->fra_atmo->aqi,
-                $dateMeasure
-            );
-        }
-        if (property_exists($data->data->indexes, 'usa_epa')) {
-            $measures[] = $this->factoryMeasureEntity(
-                MeasureCategory::POLLUTION(),
-                $location,
-                'usa_epa',
-                $data->data->indexes->usa_epa->aqi,
-                $dateMeasure
-            );
-        }
-
         return $measures;
     }
 
@@ -190,61 +196,40 @@ class Breezometer extends DataSourceAbstract
                 'lon' => $location->getLongitude()
             ]);
 
-        $dateMeasure = (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));
+        $this->currentLocation = $location;
+        $this->currentCategory = MeasureCategory::WEATHER();
+        $this->currentDateMeasured =  (new DateTimeImmutable($data->data->datetime))->setTimezone(new DateTimeZone('UTC'));;
 
-        // Temperature
-        $measures[] = $this->factoryMeasureEntity(
-            MeasureCategory::WEATHER(),
-            $location,
-            'temp',
-            $data->data->temperature->value,
-            $dateMeasure
-        );
-
-        // Humidity
-        $measures[] = $this->factoryMeasureEntity(
-            MeasureCategory::WEATHER(),
-            $location,
-            'humidity',
-            $data->data->relative_humidity,
-            $dateMeasure
-        );
-
-        // Pressure
-        $measures[] = $this->factoryMeasureEntity(
-            MeasureCategory::WEATHER(),
-            $location,
-            'pressure',
-            $data->data->pressure->value,
-            $dateMeasure
-        );
-
-        // Precipitation Probability
-        $measures[] = $this->factoryMeasureEntity(
-            MeasureCategory::WEATHER(),
-            $location,
-            'precipitation_probability',
-            $data->data->precipitation->precipitation_probability,
-            $dateMeasure
-        );
-
-        // Total precipitation
-        $measures[] = $this->factoryMeasureEntity(
-            MeasureCategory::WEATHER(),
-            $location,
-            'precipitation_mm_total',
-            $data->data->precipitation->total_precipitation->value,
-            $dateMeasure
-        );
+        $this->processMeasureRow('temp', $data->data->temperature->value);
+        $this->processMeasureRow('humidity', $data->data->relative_humidity);
+        $this->processMeasureRow('pressure', $data->data->pressure->value);
 
         return $measures;
     }
 
     /**
-     * @return string
+     * @param string     $metric
+     * @param float|null $value
+     * @return Breezometer
      */
-    protected function getMeasurePrefix(): string
+    protected function processMeasureRow(string $metric, ?float $value): self
     {
-        return $this->prefix;
+        if ($value === null) {
+            return $this;
+        }
+        try {
+            $this->dispatch(new AddMeasureCommand(
+                $this->dataSource,
+                $this->currentLocation,
+                $this->currentCategory,
+                $this->normalizeMetric($metric),
+                $this->normalizeUnit($metric),
+                $value,
+                $this->currentDateMeasured
+            ));
+        } catch (MeasureMappingException $e) {
+            $this->logger->error($e->getMessage());
+        }
+        return $this;
     }
 }

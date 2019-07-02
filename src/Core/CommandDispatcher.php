@@ -11,13 +11,17 @@ use App\Domain\Command\CommandInterface;
 use App\Domain\CommandHandler\CommandHandlerInterface;
 use App\Domain\CommandHandler\CommandResult;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 
 /**
  * Class CommandDispatcher
  * @package App\Core
  */
-class CommandDispatcher
+class CommandDispatcher implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     protected $commands = [];
 
     /**
@@ -32,6 +36,7 @@ class CommandDispatcher
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
+        $this->logger = $container->get('logger');
     }
 
     /**
@@ -53,6 +58,7 @@ class CommandDispatcher
      */
     public function dispatch(CommandInterface $command): CommandResult
     {
+        $this->logger->debug(sprintf('Start dispatch command %s', get_class($command)));
         $commandName = $this->commands[get_class($command)];
 
         /** @var CommandHandlerInterface $commandHandler */

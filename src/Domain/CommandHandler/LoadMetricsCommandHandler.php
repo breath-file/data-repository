@@ -14,6 +14,7 @@ use App\Domain\Entity\MeasureEntity;
 use App\Domain\Repository\LocationRepositoryInterface;
 use App\Domain\Repository\MeasureRepositoryInterface;
 use Exception;
+use Psr\Container\ContainerInterface;
 
 /**
  * Class LoadMetricsCommandHandler
@@ -23,20 +24,14 @@ class LoadMetricsCommandHandler implements CommandHandlerInterface
 {
     /** @var LocationRepositoryInterface */
     protected $locationRepository;
-    /**
-     * @var MeasureRepositoryInterface
-     */
-    protected $measureRepository;
 
     /**
      * LoadMetricsCommandHandler constructor.
-     * @param LocationRepositoryInterface $locationRepository
-     * @param MeasureRepositoryInterface  $measureRepository
+     * @param ContainerInterface $container
      */
-    public function __construct(LocationRepositoryInterface $locationRepository, MeasureRepositoryInterface $measureRepository)
+    public function __construct(ContainerInterface $container)
     {
-        $this->locationRepository = $locationRepository;
-        $this->measureRepository = $measureRepository;
+        $this->locationRepository = $container->get(LocationRepositoryInterface::class);
     }
 
     /**
@@ -59,10 +54,8 @@ class LoadMetricsCommandHandler implements CommandHandlerInterface
         $locations = $this->locationRepository->list();
         /** @var LocationEntity $location */
         foreach ($locations as $location) {
-            /** @var MeasureEntity $measure */
-            foreach ($command->getDataSource()->getMeasures($location, $command->getCategory()) as $measure) {
-                $this->measureRepository->save($measure);
-            }
+
+            $command->getDataSource()->getMeasures($location, $command->getCategory());
         }
         return new CommandResult(true);
     }

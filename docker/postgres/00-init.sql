@@ -4,6 +4,7 @@ CREATE TYPE data_source AS ENUM ('OpenWeatherMap', 'Breezometer');
 DROP TYPE IF EXISTS measure_category CASCADE;
 CREATE TYPE measure_category AS ENUM ('Weather', 'Pollution', 'Pollen');
 
+
 DROP TABLE IF EXISTS location;
 CREATE TABLE location
 (
@@ -21,13 +22,16 @@ CREATE TABLE measure
 (
     measure_id          SERIAL PRIMARY KEY,
     location_id         INT NOT NULL references location(location_id),
-    data_source         data_source,
-    category            measure_category,
+    data_source         data_source NOT NULL,
+    category            measure_category NOT NULL,
+    metric              VARCHAR(255) NOT NULL,
+    unit                VARCHAR(10) NOT NULL,
     name                VARCHAR(255) NOT NULL,
     value               FLOAT NOT NULL,
     measured_at         TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
     updated_at          TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
-    created_at          TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL
+    created_at          TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
+    UNIQUE(location_id, data_source, category, metric, unit, measured_at)
 );
 
 DROP TABLE IF EXISTS task;
@@ -37,7 +41,8 @@ CREATE TABLE task
     command             VARCHAR(255) NOT NULL,
     description         VARCHAR(255) NOT NULL,
     schedule            VARCHAR(64) NULL,
-    deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL
+    deleted_at          TIMESTAMP(0) WITHOUT TIME ZONE NULL,
+    UNIQUE(command)
 );
 
 DROP TABLE IF EXISTS task_history;
