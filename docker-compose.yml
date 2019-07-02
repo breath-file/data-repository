@@ -3,23 +3,12 @@ version: '3.4'
 # Define services
 #
 services:
-  web:
-    image: nginx:1.15
-    volumes:
-      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./:/var/www/project/
-    depends_on:
-      - fpm
-    ports:
-      - "81:80"
-
   fpm:
     build:
       context: .
-      dockerfile: docker/fpm/Dockerfile
-    volumes:
-      - ./:/var/www/project/
-    working_dir: /var/www/project/
+      dockerfile: docker/web/Dockerfile
+#    volumes:
+#      - ./:/var/www/
     env_file:
       - .env
     environment:
@@ -30,6 +19,23 @@ services:
       DB_HOST: postgres
     depends_on:
       - postgres
+    ports:
+      - "81:8080"
+
+  cli:
+    build:
+      context: .
+      dockerfile: docker/cli/Dockerfile
+    #    volumes:
+    #      - ./:/var/www/
+    env_file:
+      - .env
+    environment:
+      DB_DRIVER: pgsql
+      DB_USER: user
+      DB_PASSWORD: passwd
+      DB_DATABASE: weather
+      DB_HOST: postgres
 
   postgres:
     image: postgres
@@ -42,13 +48,13 @@ services:
     ports:
       - "5432:5432"
 
-  prometheus:
-    image: prom/prometheus
-    volumes:
-      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    ports:
-      - '9090:9090'
-    depends_on:
-      - web
+#  prometheus:
+#    image: prom/prometheus
+#    volumes:
+#      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#    ports:
+#      - '9090:9090'
+#    depends_on:
+#      - web
