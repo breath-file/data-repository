@@ -3,7 +3,7 @@ version: '3.4'
 # Define services
 #
 services:
-  fpm:
+  web:
     build:
       context: .
       dockerfile: docker/web/Dockerfile
